@@ -4,9 +4,9 @@ from apps.products.models import ProductType
 
 
 DEFAULT_PLANS = [
-    # Recast Workspace — billed per user
+    # Recast Application Workspace — billed per user
     {
-        "name": "Recast Workspace — Standard",
+        "name": "Recast Application Workspace — Standard",
         "product_type": ProductType.RECAST_WORKSPACE,
         "price_per_unit": "4.9500",
         "currency": "EUR",
@@ -16,7 +16,7 @@ DEFAULT_PLANS = [
         "is_active": True,
     },
     {
-        "name": "Recast Workspace — Enterprise",
+        "name": "Recast Application Workspace — Enterprise",
         "product_type": ProductType.RECAST_WORKSPACE,
         "price_per_unit": "3.9500",
         "currency": "EUR",

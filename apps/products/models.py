@@ -3,7 +3,7 @@ import uuid
 
 
 class ProductType(models.TextChoices):
-    RECAST_WORKSPACE = "recast_workspace", "Recast Workspace"
+    RECAST_WORKSPACE = "recast_workspace", "Recast Application Workspace"
     WINDOWS_365 = "windows_365", "Windows 365 Cloud PC"
     INTUNE = "intune", "Microsoft Intune"
 
@@ -36,7 +36,7 @@ class ProductInstance(models.Model):
         return f"{self.organisation} — {self.get_product_type_display()}"
 
 
-# ── Recast Workspace ──────────────────────────────────────────────────────────
+# ── Recast Application Workspace ──────────────────────────────────────────────────────────
 
 class RecastWorkspaceConfig(models.Model):
     product = models.OneToOneField(

@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Recast Config — {{ product.organisation.name }}{% endblock %}
-{% block page_title %}Recast Workspace — Configuration{% endblock %}
+{% block page_title %}Recast Application Workspace — Configuration{% endblock %}
 
 {% block content %}
 <div class="max-w-xl">
   <div class="bg-white rounded-xl border border-gray-200 p-6">
-    <p class="text-sm text-gray-500 mb-6">Enter the connection details for the Recast Workspace for <strong>{{ product.organisation.name }}</strong>.</p>
+    <p class="text-sm text-gray-500 mb-6">Enter the connection details for the Recast Application Workspace for <strong>{{ product.organisation.name }}</strong>.</p>
     <form method="post"
       hx-post="{% url 'products:recast_config' product.pk %}"
       hx-target="#htmx-toast">

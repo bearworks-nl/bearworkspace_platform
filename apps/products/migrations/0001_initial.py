@@ -44,7 +44,7 @@ class Migration(migrations.Migration):
             name='ProductInstance',
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('product_type', models.CharField(choices=[('recast_workspace', 'Recast Workspace'), ('windows_365', 'Windows 365 Cloud PC'), ('intune', 'Microsoft Intune')], max_length=30)),
+                ('product_type', models.CharField(choices=[('recast_workspace', 'Recast Application Workspace'), ('windows_365', 'Windows 365 Cloud PC'), ('intune', 'Microsoft Intune')], max_length=30)),
                 ('status', models.CharField(choices=[('active', 'Active'), ('inactive', 'Inactive'), ('provisioning', 'Provisioning'), ('error', 'Error')], default='provisioning', max_length=20)),
                 ('enabled_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),

@@ -1,6 +1,6 @@
 # Admin Dashboard
 
-Django + HTMX + Tailwind admin dashboard with customer management, product integrations (Recast Workspace, Windows 365, Microsoft Intune), usage-based subscriptions via Mollie, and PostgreSQL.
+Django + HTMX + Tailwind admin dashboard with customer management, product integrations (Recast Application Workspace, Windows 365, Microsoft Intune), usage-based subscriptions via Mollie, and PostgreSQL.
 
 ## Stack
 
@@ -97,7 +97,7 @@ Customer
 
 | Product | Billed unit |
 |---|---|
-| Recast Workspace | Per organisation member |
+| Recast Application Workspace | Per organisation member |
 | Windows 365 | Per provisioned Cloud PC |
 | Microsoft Intune | Per organisation (flat) |
 
