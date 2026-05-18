@@ -37,10 +37,10 @@ class Customer(models.Model):
         return self.name
 
     @property
-    def active_organisations(self):
-        return self.organisations.filter(is_active=True)
+    def active_environments(self):
+        return self.environments.filter(is_active=True)
 
     @property
-    def total_products(self):
-        from apps.products.models import ProductInstance
-        return ProductInstance.objects.filter(organisation__customer=self).count()
+    def total_services(self):
+        from apps.services.models import ServiceInstance
+        return ServiceInstance.objects.filter(environment__customer=self).count()

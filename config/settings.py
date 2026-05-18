@@ -27,8 +27,8 @@ INSTALLED_APPS = [
     "apps.core",
     "apps.accounts",
     "apps.customers",
-    "apps.organisations",
-    "apps.products",
+    "apps.environments",
+    "apps.services",
     "apps.billing",
 ]
 

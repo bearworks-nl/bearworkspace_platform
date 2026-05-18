@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Services{% endblock %}
+{% block page_title %}Services{% endblock %}
+{% block header_actions %}
+<a href="{% url 'services:enable' %}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold text-white" style="background:var(--accent);">
+  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>Enable service
+</a>
+{% endblock %}
+{% block content %}
+<div class="surface overflow-hidden">
+  <table class="data-table">
+    <thead><tr><th>Service</th><th>Environment</th><th>Status</th><th>Subscription</th><th></th></tr></thead>
+    <tbody>
+      {% for service in services %}
+      <tr>
+        <td>
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full flex-shrink-0 {% if service.service_type == 'recast_workspace' %}bg-purple-500{% elif service.service_type == 'windows_365' %}bg-blue-500{% else %}bg-green-500{% endif %}"></span>
+            <span class="font-semibold text-sm">{{ service.get_service_type_display }}</span>
+          </div>
+        </td>
+        <td class="text-sm" style="color:var(--text-secondary);">{{ service.environment.name }}</td>
+        <td><span class="badge {% if service.status == 'active' %}badge-green{% elif service.status == 'provisioning' %}badge-amber{% elif service.status == 'error' %}badge-red{% else %}badge-gray{% endif %}">{{ service.get_status_display }}</span></td>
+        <td>{% if service.subscription %}<span class="badge {% if service.subscription.status == 'active' %}badge-green{% elif service.subscription.status == 'trialing' %}badge-blue{% elif service.subscription.status == 'past_due' %}badge-red{% else %}badge-gray{% endif %}">{{ service.subscription.get_status_display }}</span>{% else %}<span class="text-xs" style="color:var(--text-muted);">No subscription</span>{% endif %}</td>
+        <td class="text-right"><a href="{% url 'services:detail' service.pk %}" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold" style="background:var(--bg-surface-2);border:1px solid var(--border);color:var(--text-primary);">Manage</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="text-center py-12 text-sm" style="color:var(--text-muted);">No services enabled yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
