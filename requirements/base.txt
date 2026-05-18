@@ -1,0 +1,20 @@
+Django==    5.0.6
+psycopg2-binary==2.9.12
+django-htmx==1.19.0
+django-tailwind==3.8.0
+django-widget-tweaks==1.5.0
+django-guardian==2.4.0
+django-environ==0.11.2
+Pillow==12.2.0
+celery==5.4.0
+redis==5.0.6
+django-celery-beat==2.6.0
+mollie-api-python==3.3.0
+msal==1.29.0
+requests==2.32.3
+whitenoise==6.7.0
+gunicorn==22.0.0
+django-storages[azure]==1.14.3
+sendgrid==6.11.0
+reportlab==4.2.0
+django-extensions==3.2.3

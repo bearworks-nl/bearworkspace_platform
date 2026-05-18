@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Intune Config — {{ product.organisation.name }}{% endblock %}
+{% block page_title %}Microsoft Intune — Configuration{% endblock %}
+
+{% block content %}
+<div class="max-w-xl space-y-4">
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <h2 class="text-sm font-semibold text-gray-900 mb-4">Tenant connection</h2>
+    {% if product.organisation.azure_tenant_id %}
+      <p class="text-sm text-gray-600">Connected to tenant:</p>
+      <p class="font-mono text-sm text-gray-900 mt-1">{{ product.organisation.azure_tenant_id }}</p>
+      <p class="text-xs text-gray-400 mt-2">Graph API credentials are configured via environment variables (AZURE_CLIENT_ID / AZURE_CLIENT_SECRET).</p>
+    {% else %}
+      <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+        No Azure Tenant ID set on this organisation.
+        <a href="{% url 'organisations:edit' product.organisation.pk %}" class="underline ml-1">Set it now</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-sm font-semibold text-gray-900">Policies</h2>
+      <a href="{% url 'products:intune_policies' product.pk %}"
+         class="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
+        Manage policies
+      </a>
+    </div>
+    {% if product.intune_config.policies.exists %}
+      <p class="text-sm text-gray-600">{{ product.intune_config.policies.count }} polic{{ product.intune_config.policies.count|pluralize:"y,ies" }} configured.</p>
+    {% else %}
+      <p class="text-sm text-gray-400">No policies yet.</p>
+    {% endif %}
+  </div>
+
+  <div class="flex">
+    <a href="{% url 'products:detail' product.pk %}" class="text-sm text-gray-500 hover:underline">← Back to product</a>
+  </div>
+</div>
+{% endblock %}

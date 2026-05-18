@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block unauthenticated_content %}
+<div style="min-height:100vh;background:var(--bg-page);display:flex;align-items:center;justify-content:center;padding:24px;">
+  <div style="width:100%;max-width:380px;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="width:48px;height:48px;background:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:20px;margin:0 auto 14px;box-shadow:0 0 0 6px var(--accent-subtle);">D</div>
+      <h1 style="font-size:22px;font-weight:800;color:var(--text-primary);">Welcome back</h1>
+      <p style="font-size:13px;color:var(--text-secondary);margin-top:4px;">Sign in to your dashboard</p>
+    </div>
+    <div class="card" style="padding:28px;">
+      <form method="post" action="{% url 'accounts:login' %}">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger" style="margin-bottom:16px;">{{ form.non_field_errors }}</div>
+        {% endif %}
+        <div class="field">
+          <label class="field-label">Email</label>
+          <input type="email" name="email" value="{{ form.email.value|default:'' }}" placeholder="you@example.com" autofocus>
+        </div>
+        <div class="field">
+          <label class="field-label" style="display:flex;justify-content:space-between;align-items:center;">
+            Password
+            <a href="{% url 'accounts:password_reset_request' %}" class="link">Forgot password?</a>
+          </label>
+          <input type="password" name="password" placeholder="••••••••">
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary);margin-bottom:20px;cursor:pointer;">
+          <input type="checkbox" name="remember_me"> Remember me for 30 days
+        </label>
+        <button type="submit" class="btn btn-primary" style="width:100%;padding:10px;font-size:14px;">Sign in</button>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+  function applyTheme(t) {
+    document.getElementById('html-root').classList.toggle('dark',
+      t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches));
+  }
+  applyTheme(localStorage.getItem('theme')||'system');
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{
+    if((localStorage.getItem('theme')||'system')==='system') applyTheme('system');
+  });
+  const saved = localStorage.getItem('accent');
+  if (saved) {
+    try {
+      const p = JSON.parse(saved);
+      const r = document.documentElement;
+      r.style.setProperty('--accent', p.main);
+      r.style.setProperty('--accent-hover', p.hover);
+      r.style.setProperty('--accent-subtle', p.subtle);
+    } catch(e){}
+  }
+</script>
+{% endblock %}

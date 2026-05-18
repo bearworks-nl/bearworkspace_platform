@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Recast Config — {{ product.organisation.name }}{% endblock %}
+{% block page_title %}Recast Workspace — Configuration{% endblock %}
+
+{% block content %}
+<div class="max-w-xl">
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <p class="text-sm text-gray-500 mb-6">Enter the connection details for the Recast Workspace for <strong>{{ product.organisation.name }}</strong>.</p>
+    <form method="post"
+      hx-post="{% url 'products:recast_config' product.pk %}"
+      hx-target="#htmx-toast">
+      {% csrf_token %}
+      {% include "partials/field.html" with field=form.workspace_url %}
+      {% include "partials/field.html" with field=form.api_key %}
+      {% include "partials/field.html" with field=form.workspace_id %}
+      <div class="flex items-center gap-3 mt-6 pt-4 border-t border-gray-100">
+        <button type="submit"
+          class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors">
+          Save configuration
+        </button>
+        <a href="{% url 'products:detail' product.pk %}" class="text-sm text-gray-600 hover:underline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+<div id="htmx-toast"></div>
+{% endblock %}

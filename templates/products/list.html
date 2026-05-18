@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Products{% endblock %}
+{% block page_title %}Products{% endblock %}
+{% block header_actions %}
+<a href="{% url 'products:enable' %}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold text-white" style="background:var(--accent);">
+  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>Enable product
+</a>
+{% endblock %}
+{% block content %}
+<div class="surface overflow-hidden">
+  <table class="data-table">
+    <thead><tr><th>Product</th><th>Organisation</th><th>Status</th><th>Subscription</th><th></th></tr></thead>
+    <tbody>
+      {% for product in products %}
+      <tr>
+        <td>
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full flex-shrink-0 {% if product.product_type == 'recast_workspace' %}bg-purple-500{% elif product.product_type == 'windows_365' %}bg-blue-500{% else %}bg-green-500{% endif %}"></span>
+            <span class="font-semibold text-sm">{{ product.get_product_type_display }}</span>
+          </div>
+        </td>
+        <td class="text-sm" style="color:var(--text-secondary);">{{ product.organisation.name }}</td>
+        <td><span class="badge {% if product.status == 'active' %}badge-green{% elif product.status == 'provisioning' %}badge-amber{% elif product.status == 'error' %}badge-red{% else %}badge-gray{% endif %}">{{ product.get_status_display }}</span></td>
+        <td>{% if product.subscription %}<span class="badge {% if product.subscription.status == 'active' %}badge-green{% elif product.subscription.status == 'trialing' %}badge-blue{% elif product.subscription.status == 'past_due' %}badge-red{% else %}badge-gray{% endif %}">{{ product.subscription.get_status_display }}</span>{% else %}<span class="text-xs" style="color:var(--text-muted);">No subscription</span>{% endif %}</td>
+        <td class="text-right"><a href="{% url 'products:detail' product.pk %}" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold" style="background:var(--bg-surface-2);border:1px solid var(--border);color:var(--text-primary);">Manage</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="text-center py-12 text-sm" style="color:var(--text-muted);">No products enabled yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

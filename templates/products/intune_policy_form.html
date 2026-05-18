@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{% if policy %}Edit Policy{% else %}New Policy{% endif %} — {{ product.organisation.name }}{% endblock %}
+{% block page_title %}{% if policy %}Edit policy{% else %}New Intune policy{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl">
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <form method="post">
+      {% csrf_token %}
+      <div class="grid grid-cols-2 gap-x-4">
+        {% include "partials/field.html" with field=form.name %}
+        {% include "partials/field.html" with field=form.policy_type %}
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">
+          JSON payload <span class="text-red-500">*</span>
+        </label>
+        <textarea
+          name="json_payload"
+          rows="20"
+          class="w-full px-3 py-2 border {% if form.json_payload.errors %}border-red-400{% else %}border-gray-300{% endif %} rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+          spellcheck="false">{% if form.json_payload.value %}{{ form.json_payload.value }}{% endif %}</textarea>
+        {% for error in form.json_payload.errors %}
+          <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+        {% endfor %}
+        <p class="mt-1 text-xs text-gray-500">Paste a valid Intune device configuration JSON payload.</p>
+      </div>
+
+      <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
+        <button type="submit"
+          class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors">
+          {% if policy %}Save changes{% else %}Create policy{% endif %}
+        </button>
+        <a href="{% url 'products:intune_policies' product.pk %}" class="text-sm text-gray-600 hover:underline">Cancel</a>
+        {% if policy and policy.is_deployed %}
+          <span class="ml-auto text-xs text-gray-400">Last deployed {{ policy.last_deployed|date:"d M Y H:i" }}</span>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

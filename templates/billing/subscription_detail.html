@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Subscription — {{ subscription.product.get_product_type_display }}{% endblock %}
+{% block page_title %}Subscription detail{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-4xl">
+
+  <!-- Header info -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6">
+      <h2 class="text-sm font-semibold text-gray-900 mb-4">Subscription details</h2>
+      <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+        <div>
+          <dt class="text-gray-500">Product</dt>
+          <dd class="text-gray-900 mt-0.5">{{ subscription.product.get_product_type_display }}</dd>
+        </div>
+        <div>
+          <dt class="text-gray-500">Organisation</dt>
+          <dd class="mt-0.5">
+            <a href="{% url 'organisations:detail' subscription.product.organisation.pk %}" class="text-blue-600 hover:underline">
+              {{ subscription.product.organisation.name }}
+            </a>
+          </dd>
+        </div>
+        <div>
+          <dt class="text-gray-500">Plan</dt>
+          <dd class="text-gray-900 mt-0.5">{{ subscription.plan.name }}</dd>
+        </div>
+        <div>
+          <dt class="text-gray-500">Price</dt>
+          <dd class="text-gray-900 mt-0.5">{{ subscription.plan.currency }} {{ subscription.plan.price_per_unit }} / {{ subscription.plan.get_unit_type_display }}</dd>
+        </div>
+        <div>
+          <dt class="text-gray-500">Billing interval</dt>
+          <dd class="text-gray-900 mt-0.5">{{ subscription.plan.get_interval_display }}</dd>
+        </div>
+        <div>
+          <dt class="text-gray-500">Status</dt>
+          <dd class="mt-0.5">
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+              {% if subscription.status == 'active' %}bg-green-50 text-green-700
+              {% elif subscription.status == 'trialing' %}bg-blue-50 text-blue-700
+              {% elif subscription.status == 'past_due' %}bg-red-50 text-red-700
+              {% elif subscription.status == 'paused' %}bg-amber-50 text-amber-700
+              {% else %}bg-gray-100 text-gray-600{% endif %}">
+              {{ subscription.get_status_display }}
+            </span>
+          </dd>
+        </div>
+        <div>
+          <dt class="text-gray-500">Current period</dt>
+          <dd class="text-gray-900 mt-0.5">
+            {% if subscription.current_period_end %}
+              {{ subscription.current_period_start|date:"d M Y" }} – {{ subscription.current_period_end|date:"d M Y" }}
+            {% else %}—{% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-gray-500">Started</dt>
+          <dd class="text-gray-900 mt-0.5">{{ subscription.created_at|date:"d M Y" }}</dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h2 class="text-sm font-semibold text-gray-900 mb-4">Payment mandate</h2>
+      {% if subscription.mollie_mandate_id %}
+        <div class="flex items-center gap-2 text-green-600 text-sm font-medium mb-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          Mandate active
+        </div>
+        <p class="text-xs text-gray-400 font-mono">{{ subscription.mollie_mandate_id }}</p>
+      {% else %}
+        <p class="text-sm text-gray-500 mb-4">No payment mandate set up yet.</p>
+        <a href="{% url 'billing:setup_mandate' subscription.pk %}"
+           class="w-full inline-flex justify-center bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+          Set up mandate
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Usage snapshots -->
+  <div class="bg-white rounded-xl border border-gray-200">
+    <div class="px-6 py-4 border-b border-gray-100">
+      <h2 class="text-sm font-semibold text-gray-900">Usage history</h2>
+    </div>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-100">
+          <th class="text-left py-3 px-6 font-medium text-gray-600">Period</th>
+          <th class="text-left py-3 px-6 font-medium text-gray-600">Units</th>
+          <th class="text-left py-3 px-6 font-medium text-gray-600">Unit type</th>
+          <th class="text-left py-3 px-6 font-medium text-gray-600">Captured</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for snap in snapshots %}
+        <tr>
+          <td class="py-3 px-6 text-gray-900">{{ snap.period_start|date:"M Y" }}</td>
+          <td class="py-3 px-6 font-medium text-gray-900">{{ snap.unit_count }}</td>
+          <td class="py-3 px-6 text-gray-500">{{ snap.unit_type }}</td>
+          <td class="py-3 px-6 text-gray-400 text-xs">{{ snap.captured_at|date:"d M Y H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="py-8 text-center text-gray-400">No usage snapshots yet. These are created automatically on the 1st of each month.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Invoices -->
+  <div class="bg-white rounded-xl border border-gray-200">
+    <div class="px-6 py-4 border-b border-gray-100">
+      <h2 class="text-sm font-semibold text-gray-900">Invoices</h2>
+    </div>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-100">
+          <th class="text-left py-3 px-6 font-medium text-gray-600">Invoice</th>
+          <th class="text-left py-3 px-6 font-medium text-gray-600">Period</th>
+          <th class="text-left py-3 px-6 font-medium text-gray-600">Amount</th>
+          <th class="text-left py-3 px-6 font-medium text-gray-600">Status</th>
+          <th class="py-3 px-6"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for invoice in invoices %}
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="py-3 px-6 font-medium text-gray-900">{{ invoice.invoice_number }}</td>
+          <td class="py-3 px-6 text-gray-500 text-xs">{{ invoice.period_start|date:"d M" }} – {{ invoice.period_end|date:"d M Y" }}</td>
+          <td class="py-3 px-6 font-medium text-gray-900">{{ invoice.currency }} {{ invoice.total_amount }}</td>
+          <td class="py-3 px-6">
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+              {% if invoice.status == 'paid' %}bg-green-50 text-green-700
+              {% elif invoice.status == 'open' %}bg-blue-50 text-blue-700
+              {% elif invoice.status == 'failed' %}bg-red-50 text-red-700
+              {% else %}bg-gray-100 text-gray-600{% endif %}">
+              {{ invoice.get_status_display }}
+            </span>
+          </td>
+          <td class="py-3 px-6 text-right space-x-3">
+            <a href="{% url 'billing:invoice_detail' invoice.pk %}" class="text-blue-600 hover:underline text-xs">View</a>
+            <a href="{% url 'billing:invoice_download' invoice.pk %}" class="text-gray-500 hover:underline text-xs">PDF</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="py-8 text-center text-gray-400">No invoices yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% comment %}Usage: {% include "partials/field.html" with field=form.email %}{% endcomment %}
+<div class="mb-3.5">
+  {% if field.field.widget.input_type != "checkbox" %}
+  <label class="block text-xs font-semibold mb-1.5" style="color:var(--text-secondary);" for="{{ field.id_for_label }}">
+    {{ field.label }}{% if field.field.required %} <span style="color:#ef4444;">*</span>{% endif %}
+  </label>
+  {% endif %}
+
+  {% if field.field.widget.input_type == "textarea" %}
+    <textarea name="{{ field.html_name }}" id="{{ field.id_for_label }}"
+      rows="{{ field.field.widget.attrs.rows|default:3 }}"
+      class="w-full rounded-lg text-sm px-3 py-2 {% if field.errors %}border-red-400{% endif %}">{{ field.value|default:'' }}</textarea>
+  {% elif field.field.widget.input_type == "checkbox" %}
+    <label class="flex items-center gap-2 text-sm cursor-pointer" style="color:var(--text-secondary);">
+      <input type="checkbox" name="{{ field.html_name }}" id="{{ field.id_for_label }}"
+        {% if field.value %}checked{% endif %}>
+      {{ field.label }}
+    </label>
+  {% elif field.field.widget.input_type == "select" %}
+    <select name="{{ field.html_name }}" id="{{ field.id_for_label }}"
+      class="w-full rounded-lg text-sm px-3 py-2 {% if field.errors %}border-red-400{% endif %}">
+      {% for val, label in field.field.choices %}
+        <option value="{{ val }}" {% if field.value|stringformat:"s" == val|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  {% elif field.field.widget.input_type == "password" %}
+    <input type="password" name="{{ field.html_name }}" id="{{ field.id_for_label }}"
+      class="w-full rounded-lg text-sm px-3 py-2 {% if field.errors %}border-red-400{% endif %}"
+      {% if field.field.required %}required{% endif %}>
+  {% else %}
+    <input type="{{ field.field.widget.input_type }}" name="{{ field.html_name }}" id="{{ field.id_for_label }}"
+      value="{{ field.value|default:'' }}"
+      class="w-full rounded-lg text-sm px-3 py-2 {% if field.errors %}border-red-400{% endif %}"
+      {% if field.field.required %}required{% endif %}>
+  {% endif %}
+
+  {% for error in field.errors %}
+    <p class="mt-1 text-xs" style="color:#ef4444;">{{ error }}</p>
+  {% endfor %}
+  {% if field.help_text %}
+    <p class="mt-1 text-xs" style="color:var(--text-muted);">{{ field.help_text }}</p>
+  {% endif %}
+</div>
