@@ -1,55 +1,325 @@
 {% extends "base.html" %}
 {% block unauthenticated_content %}
-<div style="min-height:100vh;background:var(--bg-page);display:flex;align-items:center;justify-content:center;padding:24px;">
-  <div style="width:100%;max-width:380px;">
-    <div style="text-align:center;margin-bottom:28px;">
-      <div style="width:48px;height:48px;background:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:20px;margin:0 auto 14px;box-shadow:0 0 0 6px var(--accent-subtle);">D</div>
-      <h1 style="font-size:22px;font-weight:800;color:var(--text-primary);">Welcome back</h1>
-      <p style="font-size:13px;color:var(--text-secondary);margin-top:4px;">Sign in to your dashboard</p>
+
+<style>
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position:  200% center; }
+  }
+  .fade-up { animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+  .fade-up-1 { animation-delay: 0.05s; }
+  .fade-up-2 { animation-delay: 0.12s; }
+  .fade-up-3 { animation-delay: 0.19s; }
+  .fade-up-4 { animation-delay: 0.26s; }
+  .fade-up-5 { animation-delay: 0.33s; }
+
+  /* Input focus ring using accent */
+  .auth-input {
+    width: 100%;
+    padding: 9px 12px;
+    font-size: 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 180ms, box-shadow 180ms;
+  }
+  .auth-input::placeholder { color: var(--text-muted); }
+  .auth-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-subtle);
+  }
+
+  /* Primary button */
+  .auth-btn {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 160ms, transform 100ms, box-shadow 160ms;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  }
+  .auth-btn:hover  { background: var(--accent-hover); box-shadow: 0 4px 12px rgba(0,0,0,0.18); }
+  .auth-btn:active { transform: scale(0.98); }
+
+  /* Decorative left panel */
+  .auth-panel {
+    background: var(--sb-bg);
+    border-right: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .auth-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 40% 50%, var(--accent-subtle) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  /* Floating orbs */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.18;
+    pointer-events: none;
+  }
+  .orb-1 { width: 280px; height: 280px; background: var(--accent); top: -60px; left: -60px; }
+  .orb-2 { width: 200px; height: 200px; background: #3b82f6; bottom: 40px; right: -40px; }
+  .orb-3 { width: 150px; height: 150px; background: var(--accent); bottom: 160px; left: 30px; opacity: 0.1; }
+
+  /* Grid pattern overlay */
+  .grid-lines {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  /* Checkbox styling */
+  input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
+
+  /* Card */
+  .auth-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Feature badge in left panel */
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    color: var(--sb-text);
+    font-size: 13px;
+  }
+  .feature-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--accent-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+</style>
+
+<div class="min-h-screen flex" style="background: var(--bg-page);">
+
+  <!-- ── Left decorative panel (hidden on small screens) ── -->
+  <div class="auth-panel hidden lg:flex lg:w-5/12 xl:w-[42%] flex-col justify-between p-12">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="grid-lines"></div>
+
+    <!-- Logo -->
+    <div class="relative z-10 flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center font-black text-white text-lg"
+           style="background: var(--accent); box-shadow: 0 0 0 4px var(--accent-subtle);">D</div>
+      <span class="font-bold text-base" style="color: var(--sb-text-hover);">Dashboard</span>
     </div>
-    <div class="card" style="padding:28px;">
-      <form method="post" action="{% url 'accounts:login' %}">
-        {% csrf_token %}
-        {% if form.non_field_errors %}
-        <div class="alert alert-danger" style="margin-bottom:16px;">{{ form.non_field_errors }}</div>
-        {% endif %}
-        <div class="field">
-          <label class="field-label">Email</label>
-          <input type="email" name="email" value="{{ form.email.value|default:'' }}" placeholder="you@example.com" autofocus>
+
+    <!-- Headline + features -->
+    <div class="relative z-10">
+      <h2 class="text-3xl font-bold leading-snug mb-3" style="color: var(--sb-text-hover);">
+        Everything you need,<br>in one place.
+      </h2>
+      <p class="text-sm mb-8" style="color: var(--sb-text);">
+        Manage your organisation, billing, and settings — all from a single dashboard.
+      </p>
+      <div style="border-top: 1px solid var(--sb-border); padding-top: 24px;">
+        <div class="feature-item">
+          <div class="feature-dot">
+            <svg width="13" height="13" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          Role-based access control for your team
         </div>
-        <div class="field">
-          <label class="field-label" style="display:flex;justify-content:space-between;align-items:center;">
-            Password
-            <a href="{% url 'accounts:password_reset_request' %}" class="link">Forgot password?</a>
+        <div class="feature-item">
+          <div class="feature-dot">
+            <svg width="13" height="13" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+          Real-time insights and reporting
+        </div>
+        <div class="feature-item">
+          <div class="feature-dot">
+            <svg width="13" height="13" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            </svg>
+          </div>
+          Secure, encrypted data storage
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer note -->
+    <p class="relative z-10 text-xs" style="color: var(--sb-section);">
+      © {% now "Y" %} Dashboard. All rights reserved.
+    </p>
+  </div>
+
+  <!-- ── Right: login form ── -->
+  <div class="flex-1 flex items-center justify-center px-6 py-12" style="background: var(--bg-page);">
+    <div class="w-full max-w-sm">
+
+      <!-- Mobile logo (shown only on small screens) -->
+      <div class="lg:hidden flex justify-center mb-8 fade-up">
+        <div class="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-white text-xl"
+             style="background: var(--accent); box-shadow: 0 0 0 5px var(--accent-subtle);">D</div>
+      </div>
+
+      <!-- Header -->
+      <div class="mb-8 fade-up fade-up-1">
+        <h1 class="text-2xl font-bold" style="color: var(--text-primary);">Welcome back</h1>
+        <p class="text-sm mt-1" style="color: var(--text-secondary);">Sign in to your account to continue</p>
+      </div>
+
+      <!-- Card -->
+      <div class="auth-card p-7 fade-up fade-up-2">
+        <form method="post" action="{% url 'accounts:login' %}">
+          {% csrf_token %}
+
+          <!-- Non-field errors -->
+          {% if form.non_field_errors %}
+          <div class="flex items-start gap-3 mb-5 px-4 py-3 rounded-lg text-sm"
+               style="background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); color: #ef4444;">
+            <svg class="mt-0.5 flex-shrink-0" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span>{{ form.non_field_errors }}</span>
+          </div>
+          {% endif %}
+
+          <!-- Email -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-1.5" style="color: var(--text-primary);">
+              Email address
+            </label>
+            <input
+              class="auth-input"
+              type="email"
+              name="email"
+              value="{{ form.email.value|default:'' }}"
+              placeholder="you@example.com"
+              autocomplete="email"
+              autofocus
+            >
+            {% if form.email.errors %}
+            <p class="mt-1 text-xs" style="color:#ef4444;">{{ form.email.errors|join:", " }}</p>
+            {% endif %}
+          </div>
+
+          <!-- Password -->
+          <div class="mb-5">
+            <div class="flex justify-between items-center mb-1.5">
+              <label class="block text-sm font-medium" style="color: var(--text-primary);">Password</label>
+              <a href="{% url 'accounts:password_reset_request' %}"
+                 class="text-xs font-medium hover:underline"
+                 style="color: var(--accent);">Forgot password?</a>
+            </div>
+            <div style="position: relative;">
+              <input
+                class="auth-input"
+                type="password"
+                name="password"
+                id="password-field"
+                placeholder="••••••••"
+                autocomplete="current-password"
+                style="padding-right: 40px;"
+              >
+              <!-- Toggle visibility -->
+              <button type="button"
+                onclick="togglePw()"
+                style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;"
+                tabindex="-1">
+                <svg id="pw-eye" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+            </div>
+            {% if form.password.errors %}
+            <p class="mt-1 text-xs" style="color:#ef4444;">{{ form.password.errors|join:", " }}</p>
+            {% endif %}
+          </div>
+
+          <!-- Remember me -->
+          <label class="flex items-center gap-2.5 mb-6 cursor-pointer select-none">
+            <input type="checkbox" name="remember_me" class="w-3.5 h-3.5 rounded">
+            <span class="text-sm" style="color: var(--text-secondary);">Remember me for 30 days</span>
           </label>
-          <input type="password" name="password" placeholder="••••••••">
-        </div>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary);margin-bottom:20px;cursor:pointer;">
-          <input type="checkbox" name="remember_me"> Remember me for 30 days
-        </label>
-        <button type="submit" class="btn btn-primary" style="width:100%;padding:10px;font-size:14px;">Sign in</button>
-      </form>
+
+          <!-- Submit -->
+          <button type="submit" class="auth-btn">Sign in</button>
+        </form>
+      </div>
+
+      <!-- Footer hint (optional — remove if no public registration) -->
+      {# Uncomment if you add a registration flow:
+      <p class="text-center text-sm mt-5 fade-up fade-up-5" style="color: var(--text-secondary);">
+        Don't have an account?
+        <a href="#" class="font-semibold hover:underline" style="color: var(--accent);">Request access</a>
+      </p>
+      #}
+
     </div>
   </div>
+
 </div>
+
 <script>
-  function applyTheme(t) {
-    document.getElementById('html-root').classList.toggle('dark',
-      t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches));
-  }
-  applyTheme(localStorage.getItem('theme')||'system');
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{
-    if((localStorage.getItem('theme')||'system')==='system') applyTheme('system');
-  });
-  const saved = localStorage.getItem('accent');
-  if (saved) {
+  /* ── Theme & accent restore (runs before first paint) ── */
+  (function () {
+    function applyTheme(t) {
+      document.getElementById('html-root').classList.toggle('dark',
+        t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches));
+    }
+    const theme = localStorage.getItem('theme') || 'system';
+    applyTheme(theme);
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      if ((localStorage.getItem('theme') || 'system') === 'system') applyTheme('system');
+    });
     try {
-      const p = JSON.parse(saved);
-      const r = document.documentElement;
-      r.style.setProperty('--accent', p.main);
-      r.style.setProperty('--accent-hover', p.hover);
-      r.style.setProperty('--accent-subtle', p.subtle);
-    } catch(e){}
+      const saved = localStorage.getItem('accent');
+      if (saved) {
+        const p = JSON.parse(saved);
+        const r = document.documentElement;
+        if (p.main)   r.style.setProperty('--accent',        p.main);
+        if (p.hover)  r.style.setProperty('--accent-hover',  p.hover);
+        if (p.subtle) r.style.setProperty('--accent-subtle', p.subtle);
+        /* legacy key names used by password_reset pages */
+        if (p.a600)   r.style.setProperty('--accent',        p.a600);
+        if (p.a700)   r.style.setProperty('--accent-hover',  p.a700);
+      }
+    } catch (e) {}
+  })();
+
+  /* ── Password visibility toggle ── */
+  function togglePw() {
+    const f = document.getElementById('password-field');
+    f.type = f.type === 'password' ? 'text' : 'password';
   }
 </script>
+
 {% endblock %}
