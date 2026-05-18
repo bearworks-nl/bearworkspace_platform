@@ -18,7 +18,7 @@ class CustomerDetailView(CustomerScopedMixin, View):
         customer = get_object_or_404(Customer, pk=pk)
         return render(request, "customers/detail.html", {
             "customer": customer,
-            "environments": customer.environments.filter(is_active=True),
+            "organisations": customer.organisations.filter(is_active=True),
             "users": customer.users.filter(is_active=True),
         })
 

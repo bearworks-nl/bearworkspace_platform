@@ -1,15 +1,15 @@
 from django import forms
 from .models import Plan, Subscription
-from apps.services.models import ServiceType
+from apps.products.models import ProductType
 
 
 class PlanForm(forms.ModelForm):
-    service_type = forms.ChoiceField(choices=ServiceType.choices)
+    product_type = forms.ChoiceField(choices=ProductType.choices)
 
     class Meta:
         model = Plan
         fields = [
-            "name", "service_type", "price_per_unit", "currency",
+            "name", "product_type", "price_per_unit", "currency",
             "interval", "unit_type", "included_units", "is_active",
         ]
         widgets = {

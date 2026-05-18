@@ -2,18 +2,19 @@
 {% block title %}{{ customer.name }}{% endblock %}
 {% block page_title %}{{ customer.name }}{% endblock %}
 {% block header_actions %}
-<a href="{% url 'customers:edit' customer.pk %}" class="inline-flex items-center px-3.5 py-2 rounded-lg text-sm font-semibold" style="background:var(--bg-surface-2);border:1px solid var(--border);color:var(--text-primary);">Edit</a>
+<a href="{% url 'customers:edit' customer.pk %}" class="inline-flex items-center px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors" style="background:var(--bg-surface-2);border:1px solid var(--border);color:var(--text-primary);">Edit customer</a>
 {% endblock %}
 {% block content %}
-<div class="flex flex-col gap-5">
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-    <div class="surface p-5 lg:col-span-2">
+<div class="flex flex-col gap-4">
+  <div class="grid grid-cols-3 gap-4">
+    <div class="surface p-5 col-span-2">
       <p class="text-xs font-bold uppercase tracking-widest mb-4" style="color:var(--text-muted);">Details</p>
       <div class="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
-        <div><p class="text-xs font-semibold mb-0.5" style="color:var(--text-muted);">Email</p><p style="color:var(--text-secondary);">{{ customer.email|default:"—" }}</p></div>
-        <div><p class="text-xs font-semibold mb-0.5" style="color:var(--text-muted);">Phone</p><p style="color:var(--text-secondary);">{{ customer.phone|default:"—" }}</p></div>
-        <div><p class="text-xs font-semibold mb-0.5" style="color:var(--text-muted);">VAT number</p><p style="color:var(--text-secondary);">{{ customer.vat_number|default:"—" }}</p></div>
-        <div><p class="text-xs font-semibold mb-0.5" style="color:var(--text-muted);">Country</p><p style="color:var(--text-secondary);">{{ customer.country }}</p></div>
+        <div><p class="text-xs font-semibold mb-0.5" style="color:var(--text-muted);">Email</p><p class="font-medium">{{ customer.email|default:"—" }}</p></div>
+        <div><p class="text-xs font-semibold mb-0.5" style="color:var(--text-muted);">Phone</p><p class="font-medium">{{ customer.phone|default:"—" }}</p></div>
+        <div><p class="text-xs font-semibold mb-0.5" style="color:var(--text-muted);">VAT number</p><p class="font-medium">{{ customer.vat_number|default:"—" }}</p></div>
+        <div><p class="text-xs font-semibold mb-0.5" style="color:var(--text-muted);">Country</p><p class="font-medium">{{ customer.country }}</p></div>
+        <div class="col-span-2"><p class="text-xs font-semibold mb-0.5" style="color:var(--text-muted);">Address</p><p class="font-medium">{{ customer.address_line1|default:"—" }}{% if customer.city %}, {{ customer.postal_code }} {{ customer.city }}{% endif %}</p></div>
         {% if customer.notes %}<div class="col-span-2"><p class="text-xs font-semibold mb-0.5" style="color:var(--text-muted);">Notes</p><p style="color:var(--text-secondary);">{{ customer.notes }}</p></div>{% endif %}
       </div>
     </div>
@@ -21,7 +22,7 @@
       <p class="text-xs font-bold uppercase tracking-widest mb-4" style="color:var(--text-muted);">Status</p>
       <span class="badge {% if customer.status == 'active' %}badge-green{% elif customer.status == 'trial' %}badge-amber{% elif customer.status == 'suspended' %}badge-red{% else %}badge-gray{% endif %} mb-4">{{ customer.get_status_display }}</span>
       <div class="flex flex-col gap-2.5 text-sm mt-3">
-        <div class="flex justify-between"><span style="color:var(--text-muted);">Environments</span><span class="font-bold">{{ environments.count }}</span></div>
+        <div class="flex justify-between"><span style="color:var(--text-muted);">Organisations</span><span class="font-bold">{{ organisations.count }}</span></div>
         <div class="flex justify-between"><span style="color:var(--text-muted);">Users</span><span class="font-bold">{{ users.count }}</span></div>
         <div class="flex justify-between"><span style="color:var(--text-muted);">Since</span><span class="font-bold">{{ customer.created_at|date:"d M Y" }}</span></div>
         {% if customer.mollie_customer_id %}<div class="flex justify-between"><span style="color:var(--text-muted);">Mollie ID</span><code class="text-xs">{{ customer.mollie_customer_id }}</code></div>{% endif %}
@@ -31,26 +32,26 @@
 
   <div class="surface overflow-hidden">
     <div class="flex items-center justify-between px-5 py-3.5" style="border-bottom:1px solid var(--border);">
-      <span class="text-sm font-bold" style="color:var(--text-primary);">Environments</span>
-      <a href="{% url 'environments:create' %}" class="text-xs font-semibold" style="color:var(--accent);">+ New</a>
+      <span class="text-sm font-bold" style="color:var(--text-primary);">Organisations</span>
+      <a href="{% url 'organisations:create' %}" class="text-xs font-semibold" style="color:var(--accent);">+ New</a>
     </div>
     <table class="data-table">
-      <thead><tr><th>Name</th><th>Services</th><th>Members</th><th></th></tr></thead>
+      <thead><tr><th>Name</th><th>Products</th><th>Members</th><th></th></tr></thead>
       <tbody>
-        {% for env in environments %}
+        {% for org in organisations %}
         <tr>
-          <td class="font-semibold text-sm">{{ env.name }}</td>
-          <td class="text-sm" style="color:var(--text-secondary);">{{ env.services.count }}</td>
-          <td class="text-sm" style="color:var(--text-secondary);">{{ env.memberships.count }}</td>
+          <td class="font-semibold text-sm">{{ org.name }}</td>
+          <td class="text-sm" style="color:var(--text-secondary);">{{ org.products.count }}</td>
+          <td class="text-sm" style="color:var(--text-secondary);">{{ org.memberships.count }}</td>
           <td class="text-right">
             <div class="flex justify-end gap-2">
-              <a href="{% url 'environments:detail' env.pk %}" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold" style="background:var(--bg-surface-2);border:1px solid var(--border);color:var(--text-primary);">View</a>
-              <a href="{% url 'environments:members' env.pk %}" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold" style="background:var(--bg-surface-2);border:1px solid var(--border);color:var(--text-primary);">Members</a>
+              <a href="{% url 'organisations:detail' org.pk %}" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold" style="background:var(--bg-surface-2);border:1px solid var(--border);color:var(--text-primary);">View</a>
+              <a href="{% url 'organisations:members' org.pk %}" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold" style="background:var(--bg-surface-2);border:1px solid var(--border);color:var(--text-primary);">Members</a>
             </div>
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="4" class="text-center py-8 text-sm" style="color:var(--text-muted);">No environments. <a href="{% url 'environments:create' %}" style="color:var(--accent);">Create one</a></td></tr>
+        <tr><td colspan="4" class="text-center py-8 text-sm" style="color:var(--text-muted);">No organisations. <a href="{% url 'organisations:create' %}" style="color:var(--accent);">Create one</a></td></tr>
         {% endfor %}
       </tbody>
     </table>

@@ -1,14 +1,13 @@
 from django.views import View
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages
-from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
-import logging
-
+from django.contrib import messages
 from apps.core.middleware import LoginRequiredMixin, CustomerScopedMixin, SuperAdminRequiredMixin
-from .models import Plan, Subscription, Invoice
+from .models import Invoice, Subscription, Plan
 from .forms import PlanForm, SubscriptionPlanChangeForm
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +16,16 @@ logger = logging.getLogger(__name__)
 
 class PlanListView(SuperAdminRequiredMixin, View):
     def get(self, request):
-        plans = Plan.objects.all().order_by("service_type", "name")
-        return render(request, "billing/plan_list.html", {"plans": plans})
+        plans = Plan.objects.all().order_by("product_type", "name")
+        # Group by product type for display
+        from apps.products.models import ProductType
+        grouped = {}
+        for pt_value, pt_label in ProductType.choices:
+            grouped[pt_label] = plans.filter(product_type=pt_value)
+        return render(request, "billing/plan_list.html", {
+            "plans": plans,
+            "grouped": grouped,
+        })
 
 
 class PlanCreateView(SuperAdminRequiredMixin, View):
@@ -28,8 +35,8 @@ class PlanCreateView(SuperAdminRequiredMixin, View):
     def post(self, request):
         form = PlanForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Plan created.")
+            plan = form.save()
+            messages.success(request, f"Plan '{plan.name}' created.")
             return redirect("billing:plan_list")
         return render(request, "billing/plan_form.html", {"form": form})
 
@@ -45,7 +52,7 @@ class PlanUpdateView(SuperAdminRequiredMixin, View):
         if form.is_valid():
             form.save()
             if request.htmx:
-                return render(request, "partials/toast.html", {"message": "Saved.", "type": "success"})
+                return render(request, "partials/toast.html", {"message": "Plan saved.", "type": "success"})
             messages.success(request, f"Plan '{plan.name}' updated.")
             return redirect("billing:plan_list")
         return render(request, "billing/plan_form.html", {"form": form, "plan": plan})
@@ -65,10 +72,10 @@ class PlanToggleView(SuperAdminRequiredMixin, View):
 
 class SubscriptionListView(CustomerScopedMixin, View):
     def get(self, request):
-        filters = self.get_env_filter()
+        filters = self.get_org_filter()
         subscriptions = Subscription.objects.filter(
-            **{k.replace("environment__", "service__environment__"): v for k, v in filters.items()}
-        ).select_related("plan", "service__environment__customer").order_by("-created_at")
+            **{k.replace("organisation__", "product__organisation__"): v for k, v in filters.items()}
+        ).select_related("plan", "product__organisation__customer").order_by("-created_at")
         return render(request, "billing/subscription_list.html", {"subscriptions": subscriptions})
 
 
@@ -106,12 +113,12 @@ class SubscriptionEditView(SuperAdminRequiredMixin, View):
 
 class InvoiceListView(CustomerScopedMixin, View):
     def get(self, request):
-        filters = self.get_env_filter()
+        filters = self.get_org_filter()
         invoices = Invoice.objects.filter(
-            **{k.replace("environment__", "subscription__service__environment__"): v
+            **{k.replace("organisation__", "subscription__product__organisation__"): v
                for k, v in filters.items()}
         ).select_related(
-            "subscription__service__environment__customer", "subscription__plan"
+            "subscription__product__organisation__customer", "subscription__plan"
         ).order_by("-created_at")
         return render(request, "billing/invoice_list.html", {"invoices": invoices})
 
@@ -157,7 +164,7 @@ class MollieWebhookView(View):
 class SetupMandateView(LoginRequiredMixin, View):
     def get(self, request, subscription_pk):
         sub = get_object_or_404(Subscription, pk=subscription_pk)
-        customer = sub.service.environment.customer
+        customer = sub.product.organisation.customer
         from .mollie_service import create_first_payment
         redirect_url = request.build_absolute_uri(f"/billing/subscriptions/{sub.pk}/")
         checkout_url = create_first_payment(customer, sub, redirect_url)
