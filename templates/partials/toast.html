@@ -1,8 +1,0 @@
-<div id="htmx-toast" hx-swap-oob="true"
-  class="fixed top-4 right-4 z-50 toast-in flex items-start gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg px-4 py-3 text-sm text-gray-800 dark:text-gray-200 min-w-[240px] max-w-sm">
-  <span class="mt-0.5 w-2 h-2 rounded-full flex-shrink-0 {% if type == 'success' %}bg-green-500{% elif type == 'error' %}bg-red-500{% else %}bg-blue-500{% endif %}"></span>
-  <span>{{ message }}</span>
-</div>
-<script>
-  setTimeout(()=>{const t=document.getElementById('htmx-toast');if(t){t.style.transition='opacity 400ms';t.style.opacity='0';setTimeout(()=>t.remove(),400);}},4000);
-</script>
