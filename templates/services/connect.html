@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Connect {{ service.display_name }} — WorkspaceManager{% endblock %}
+{% block page_title %}Connect Service{% endblock %}
+
+{% block content %}
+<div style="max-width:580px;">
+  <div class="page-header">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:28px;">{{ service.icon }}</span>
+        <div>
+          <div class="page-title">{{ service.display_name }}</div>
+          <div style="font-size:12px;color:var(--text-muted);">Step 2 of 4 — Connect service</div>
+        </div>
+      </div>
+    </div>
+    <a href="{% url 'environments:detail' service.environment.pk %}" class="btn btn-secondary">← Back</a>
+  </div>
+
+  <!-- Progress indicator -->
+  <div style="display:flex;gap:8px;margin-bottom:28px;align-items:center;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:rgba(34,197,94,0.15);color:var(--success);">1</div>
+      <span style="font-size:12px;color:var(--text-muted);">Add</span>
+    </div>
+    <div style="flex:1;height:1px;background:var(--border);"></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:var(--accent);color:#fff;">2</div>
+      <span style="font-size:12px;font-weight:700;color:var(--text-primary);">Connect</span>
+    </div>
+    <div style="flex:1;height:1px;background:var(--border);"></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:var(--bg-raised);color:var(--text-muted);border:1px solid var(--border);">3</div>
+      <span style="font-size:12px;color:var(--text-muted);">Licenses</span>
+    </div>
+    <div style="flex:1;height:1px;background:var(--border);"></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:var(--bg-raised);color:var(--text-muted);border:1px solid var(--border);">4</div>
+      <span style="font-size:12px;color:var(--text-muted);">Match</span>
+    </div>
+  </div>
+
+  {% if already_available %}
+  <!-- Service is available — offer to connect -->
+  <div class="card" style="margin-bottom:20px;border-color:rgba(34,197,94,0.25);background:rgba(34,197,94,0.05);">
+    <div style="display:flex;gap:12px;align-items:flex-start;">
+      <span style="font-size:20px;">✅</span>
+      <div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px;color:var(--success);">Service is available</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">
+          Credentials are configured for <strong>{{ config.api_url }}</strong>. You can connect now and proceed to license discovery.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="connect">
+    <button type="submit" class="btn btn-primary" style="width:100%;">Connect and read licenses →</button>
+  </form>
+
+  {% else %}
+  <!-- Service not yet available -->
+  <div class="card" style="margin-bottom:20px;border-color:rgba(251,146,60,0.25);background:rgba(251,146,60,0.05);">
+    <div style="display:flex;gap:12px;align-items:flex-start;">
+      <span style="font-size:20px;">⚠️</span>
+      <div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px;color:var(--warning);">Service not yet available</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">
+          No credentials are configured for this service. You need to either configure the API details first, or place an order to provision it.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <a href="{% url 'services:configure' service.pk %}" class="btn btn-primary" style="text-align:center;">
+      Configure credentials
+    </a>
+    <form method="post" style="margin:0;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="order">
+      <button type="submit" class="btn btn-secondary" style="width:100%;">Order service (TBD)</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

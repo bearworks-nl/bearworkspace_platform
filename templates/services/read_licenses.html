@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Licenses — {{ service.display_name }} — WorkspaceManager{% endblock %}
+{% block page_title %}Read Licenses{% endblock %}
+
+{% block content %}
+<div style="max-width:580px;">
+  <div class="page-header">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:28px;">{{ service.icon }}</span>
+        <div>
+          <div class="page-title">{{ service.display_name }}</div>
+          <div style="font-size:12px;color:var(--text-muted);">Step 3 of 4 — License discovery</div>
+        </div>
+      </div>
+    </div>
+    <a href="{% url 'services:connect' service.pk %}" class="btn btn-secondary">← Back</a>
+  </div>
+
+  <!-- Progress indicator -->
+  <div style="display:flex;gap:8px;margin-bottom:28px;align-items:center;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:rgba(34,197,94,0.15);color:var(--success);">1</div>
+      <span style="font-size:12px;color:var(--text-muted);">Add</span>
+    </div>
+    <div style="flex:1;height:1px;background:var(--border);"></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:rgba(34,197,94,0.15);color:var(--success);">2</div>
+      <span style="font-size:12px;color:var(--text-muted);">Connect</span>
+    </div>
+    <div style="flex:1;height:1px;background:var(--border);"></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:var(--accent);color:#fff;">3</div>
+      <span style="font-size:12px;font-weight:700;color:var(--text-primary);">Licenses</span>
+    </div>
+    <div style="flex:1;height:1px;background:var(--border);"></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:var(--bg-raised);color:var(--text-muted);border:1px solid var(--border);">4</div>
+      <span style="font-size:12px;color:var(--text-muted);">Match</span>
+    </div>
+  </div>
+
+  {% if config.license_count > 0 %}
+  <!-- Licenses found -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header" style="margin-bottom:16px;">
+      <div>
+        <div class="card-title">Licenses found</div>
+        <div class="card-subtitle">Retrieved from the Recast API</div>
+      </div>
+      <span style="font-size:24px;font-weight:800;color:var(--accent);">{{ config.license_count }}</span>
+    </div>
+
+    {% if config.license_numbers %}
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      {% for lic in config.license_numbers %}
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;background:var(--bg-raised);border:1px solid var(--border);">
+        <span style="font-size:14px;">🔑</span>
+        <span style="font-size:13px;font-family:'JetBrains Mono',monospace;color:var(--text-primary);">{{ lic }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div style="display:flex;gap:10px;">
+    <form method="post" style="flex:1;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="sync">
+      <button type="submit" class="btn btn-secondary" style="width:100%;">↻ Re-sync licenses</button>
+    </form>
+    <a href="{% url 'services:match_licenses' service.pk %}" class="btn btn-primary" style="flex:2;text-align:center;">
+      Match against orders →
+    </a>
+  </div>
+
+  {% else %}
+  <!-- No licenses yet -->
+  <div class="card" style="margin-bottom:20px;border-color:rgba(99,102,241,0.2);background:var(--accent-dim);">
+    <div style="display:flex;gap:12px;align-items:flex-start;">
+      <span style="font-size:20px;">ℹ️</span>
+      <div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">
+        No licenses have been read yet. Click <strong>Sync licenses</strong> to fetch them from the Recast API.
+        <br>Make sure your API credentials are correctly configured.
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;">
+    <form method="post" style="flex:1;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="sync">
+      <button type="submit" class="btn btn-primary" style="width:100%;">Sync licenses</button>
+    </form>
+    <a href="{% url 'services:match_licenses' service.pk %}" class="btn btn-secondary" style="flex:1;text-align:center;">
+      Skip to match →
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

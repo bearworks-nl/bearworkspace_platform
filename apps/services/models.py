@@ -27,10 +27,13 @@ class Service(models.Model):
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='configuring')
     enabled = models.BooleanField(default=False)
+
+    # Step 2: tracks whether the service has been connected
+    is_connected = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # Removed unique_together so multiple named instances of the same type are allowed
     class Meta:
         ordering = ['environment', 'service_type', 'name']
 
@@ -58,6 +61,12 @@ class RecastConfig(models.Model):
     api_key = models.CharField(max_length=500)
     workspace_count = models.PositiveIntegerField(default=0)
     last_synced = models.DateTimeField(null=True, blank=True)
+
+    # Step 3: license data read from the Recast API
+    license_count = models.PositiveIntegerField(default=0)
+    license_numbers = models.JSONField(default=list, blank=True)
+    # Step 4: matched order reference (free-text for now; FK to Order when that model exists)
+    matched_order_ref = models.CharField(max_length=500, blank=True)
 
     def __str__(self):
         return f'Recast Config for {self.service}'

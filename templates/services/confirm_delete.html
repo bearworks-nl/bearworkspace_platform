@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Remove Service — WorkspaceManager{% endblock %}
+{% block page_title %}Remove Service{% endblock %}
+
+{% block content %}
+<div style="max-width:480px;">
+  <div class="card" style="border-color:rgba(239,68,68,0.2);">
+    <div style="text-align:center;padding:12px 0 20px;">
+      <div style="font-size:48px;margin-bottom:12px;">⚠️</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:8px;">Remove "{{ service.display_name }}"?</div>
+      <div style="font-size:14px;color:var(--text-muted);line-height:1.6;">
+        This will permanently remove the service and all its configuration from
+        <strong>{{ service.environment.name }}</strong>. This action cannot be undone.
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <a href="{% url 'environments:detail' service.environment.pk %}" class="btn btn-secondary" style="flex:1;justify-content:center;">Cancel</a>
+      <form method="post" style="flex:1;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger" style="width:100%;justify-content:center;">Yes, Remove</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

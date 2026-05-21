@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Match Licenses — {{ service.display_name }} — WorkspaceManager{% endblock %}
+{% block page_title %}Match Licenses{% endblock %}
+
+{% block content %}
+<div style="max-width:580px;">
+  <div class="page-header">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:28px;">{{ service.icon }}</span>
+        <div>
+          <div class="page-title">{{ service.display_name }}</div>
+          <div style="font-size:12px;color:var(--text-muted);">Step 4 of 4 — Match licenses</div>
+        </div>
+      </div>
+    </div>
+    <a href="{% url 'services:read_licenses' service.pk %}" class="btn btn-secondary">← Back</a>
+  </div>
+
+  <!-- Progress indicator -->
+  <div style="display:flex;gap:8px;margin-bottom:28px;align-items:center;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:rgba(34,197,94,0.15);color:var(--success);">1</div>
+      <span style="font-size:12px;color:var(--text-muted);">Add</span>
+    </div>
+    <div style="flex:1;height:1px;background:var(--border);"></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:rgba(34,197,94,0.15);color:var(--success);">2</div>
+      <span style="font-size:12px;color:var(--text-muted);">Connect</span>
+    </div>
+    <div style="flex:1;height:1px;background:var(--border);"></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:rgba(34,197,94,0.15);color:var(--success);">3</div>
+      <span style="font-size:12px;color:var(--text-muted);">Licenses</span>
+    </div>
+    <div style="flex:1;height:1px;background:var(--border);"></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:var(--accent);color:#fff;">4</div>
+      <span style="font-size:12px;font-weight:700;color:var(--text-primary);">Match</span>
+    </div>
+  </div>
+
+  {% if no_licenses %}
+  <!-- No licenses found — show order options -->
+  <div class="card" style="margin-bottom:20px;border-color:rgba(251,146,60,0.25);background:rgba(251,146,60,0.05);">
+    <div style="display:flex;gap:12px;align-items:flex-start;">
+      <span style="font-size:20px;">⚠️</span>
+      <div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px;color:var(--warning);">No licenses found</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">
+          No license numbers were returned by the Recast API for this service. You can order new licenses or add to an existing order.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="order_new">
+      <button type="submit" class="btn btn-primary" style="width:100%;">
+        🛒 Order new licenses
+      </button>
+    </form>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add_licenses">
+      <button type="submit" class="btn btn-secondary" style="width:100%;">
+        ➕ Add to existing order
+      </button>
+    </form>
+  </div>
+
+  {% elif matched_subscriptions %}
+  <!-- Matched orders found -->
+  <div class="card" style="margin-bottom:20px;border-color:rgba(34,197,94,0.25);background:rgba(34,197,94,0.05);">
+    <div style="display:flex;gap:12px;align-items:flex-start;">
+      <span style="font-size:20px;">✅</span>
+      <div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px;color:var(--success);">Licenses matched</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">
+          The following order(s) match the license numbers from your Recast service.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+    {% for sub in matched_subscriptions %}
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:10px;background:var(--bg-raised);border:1px solid var(--border);">
+      <div>
+        <div style="font-size:13.5px;font-weight:700;">{{ sub.plan.name }}</div>
+        <div style="font-size:12px;color:var(--text-muted);">
+          €{{ sub.plan.price_per_unit }}/{{ sub.plan.unit_label }} ·
+          <span style="{% if sub.status == 'active' %}color:var(--success);{% elif sub.status == 'trialing' %}color:var(--info);{% else %}color:var(--warning);{% endif %}">
+            {{ sub.get_status_display }}
+          </span>
+        </div>
+      </div>
+      <a href="{% url 'billing:overview' %}" class="btn btn-secondary btn-xs">View</a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <a href="{% url 'environments:detail' service.environment.pk %}" class="btn btn-primary" style="width:100%;text-align:center;">
+    Done — back to environment ✓
+  </a>
+
+  {% else %}
+  <!-- Licenses exist but no matching orders -->
+  <div class="card" style="margin-bottom:20px;border-color:rgba(99,102,241,0.2);background:var(--accent-dim);">
+    <div style="display:flex;gap:12px;align-items:flex-start;">
+      <span style="font-size:20px;">🔍</span>
+      <div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px;">No matching orders</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">
+          {{ license_numbers|length }} license(s) found but no existing orders match them.
+          You can place a new order or add to an existing one.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Show the unmatched license numbers -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-title" style="margin-bottom:12px;">License numbers</div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      {% for lic in license_numbers %}
+      <div style="padding:8px 12px;border-radius:6px;background:var(--bg-raised);border:1px solid var(--border);font-size:12px;font-family:'JetBrains Mono',monospace;">
+        {{ lic }}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="order_new">
+      <button type="submit" class="btn btn-primary" style="width:100%;">
+        🛒 Order new licenses
+      </button>
+    </form>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add_licenses">
+      <button type="submit" class="btn btn-secondary" style="width:100%;">
+        ➕ Add to existing order
+      </button>
+    </form>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
