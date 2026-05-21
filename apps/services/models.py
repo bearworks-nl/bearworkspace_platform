@@ -4,7 +4,6 @@ from apps.environments.models import Environment
 
 SERVICE_TYPE_CHOICES = [
     ('recast_workspace', 'Recast Application Workspace'),
-    ('recast_user_license', 'Recast Application Workspace User License'),
     ('windows_365', 'Windows 365 Cloud PC'),
     ('intune', 'Microsoft Intune'),
 ]
@@ -48,7 +47,6 @@ class Service(models.Model):
     def icon(self):
         icons = {
             'recast_workspace': '🖥️',
-            'recast_user_license': '👤',
             'windows_365': '☁️',
             'intune': '🛡️',
         }

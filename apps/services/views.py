@@ -40,7 +40,7 @@ class RecastConfigForm(forms.ModelForm):
         model = RecastConfig
         fields = ('api_url', 'api_key')
         widgets = {
-            'api_url': forms.URLInput(attrs={'class': 'form-input', 'placeholder': 'e.g. https://<workspace>.applicationworkspace.cloud>'}),
+            'api_url': forms.URLInput(attrs={'class': 'form-input'}),
             'api_key': forms.TextInput(attrs={'class': 'form-input'}),
         }
 
@@ -123,7 +123,7 @@ def service_connect(request, pk):
     """
     service = get_object_or_404(Service, pk=pk, environment__owner=request.user)
 
-    if service.service_type not in ('recast_workspace', 'recast_user_license'):
+    if service.service_type != 'recast_workspace':
         # Non-Recast services go straight to configure
         return redirect('services:configure', pk=service.pk)
 
@@ -168,7 +168,7 @@ def service_read_licenses(request, pk):
     """
     service = get_object_or_404(Service, pk=pk, environment__owner=request.user)
 
-    if service.service_type not in ('recast_workspace', 'recast_user_license'):
+    if service.service_type != 'recast_workspace':
         return redirect('services:configure', pk=service.pk)
 
     config, _ = RecastConfig.objects.get_or_create(service=service)
@@ -205,7 +205,7 @@ def service_match_licenses(request, pk):
 
     service = get_object_or_404(Service, pk=pk, environment__owner=request.user)
 
-    if service.service_type not in ('recast_workspace', 'recast_user_license'):
+    if service.service_type != 'recast_workspace':
         return redirect('services:configure', pk=service.pk)
 
     config = getattr(service, 'recast_config', None)
@@ -251,7 +251,7 @@ def service_configure(request, pk):
     config_obj = None
     FormClass = None
 
-    if service.service_type in ('recast_workspace', 'recast_user_license'):
+    if service.service_type == 'recast_workspace':
         config_obj, _ = RecastConfig.objects.get_or_create(service=service)
         FormClass = RecastConfigForm
     elif service.service_type == 'windows_365':
@@ -300,7 +300,7 @@ def service_configure(request, pk):
                 messages.success(request, 'Service configured successfully.')
 
             # After configuring a Recast service, send to Step 2
-            if service.service_type in ('recast_workspace', 'recast_user_license'):
+            if service.service_type == 'recast_workspace':
                 return redirect('services:connect', pk=service.pk)
             return redirect('environments:detail', pk=service.environment.pk)
     else:

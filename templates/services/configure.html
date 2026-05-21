@@ -23,12 +23,12 @@
   </div>
 
   <!-- Info banner -->
-  {% if service.service_type == 'recast_workspace' or service.service_type == 'recast_user_license' %}
+  {% if service.service_type == 'recast_workspace' %}
   <div class="card" style="margin-bottom:20px;border-color:rgba(99,102,241,0.2);background:var(--accent-dim);">
     <div style="display:flex;gap:12px;">
       <span style="font-size:18px;">ℹ️</span>
       <div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">
-        Enter your Recast Application API URL and API key. Billed per
+        Enter your Recast Application API URL and API key. Billed per workspace count.
         {% if service.service_type == 'recast_workspace' %}workspace count{% else %}user (org member){% endif %}.
       </div>
     </div>
