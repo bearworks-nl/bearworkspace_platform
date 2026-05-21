@@ -3,6 +3,9 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+admin.site.site_header = 'Site administration'
+admin.site.site_title  = 'Workspace Manager Admin'
+admin.site.index_title = 'Workspace Manager Admin'
 
 urlpatterns = [
     path('admin/', admin.site.urls),

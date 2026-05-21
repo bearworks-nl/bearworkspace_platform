@@ -125,3 +125,7 @@ MESSAGE_TAGS = {
     messages.WARNING: 'warning',
     messages.ERROR: 'error',
 }
+
+# Admin branding
+ADMIN_SITE_HEADER = 'Site administration'
+ADMIN_SITE_TITLE = 'Workspace Manager Admin'
