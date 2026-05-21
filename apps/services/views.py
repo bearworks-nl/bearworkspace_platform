@@ -40,7 +40,7 @@ class RecastConfigForm(forms.ModelForm):
         model = RecastConfig
         fields = ('api_url', 'api_key')
         widgets = {
-            'api_url': forms.URLInput(attrs={'class': 'form-input'}),
+            'api_url': forms.URLInput(attrs={'class': 'form-input', 'placeholder': 'e.g. https://<workspace>.applicationworkspace.cloud>'}),
             'api_key': forms.TextInput(attrs={'class': 'form-input'}),
         }
 
