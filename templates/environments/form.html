@@ -24,7 +24,9 @@
       {% endfor %}
       <div style="display:flex;gap:10px;margin-top:8px;">
         <a href="{% url 'environments:list' %}" class="btn btn-secondary" style="flex:1;justify-content:center;">Cancel</a>
-        <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center;">{{ title }}</button>
+        <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center;">
+          {% if environment %}Save Environment{% else %}Create Environment{% endif %}
+        </button>
       </div>
     </form>
   </div>
