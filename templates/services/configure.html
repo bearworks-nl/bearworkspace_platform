@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}Configure {{ service.display_name }} — WorkspaceManager{% endblock %}
+{% block page_title %}Configure Service{% endblock %}
+
+{% block content %}
+<div style="max-width:640px;">
+  <div class="page-header">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:28px;">{{ service.icon }}</span>
+        <div>
+          <div class="page-title">{{ service.display_name }}</div>
+          {% if service.name %}
+          <div style="font-size:12px;color:var(--text-muted);">{{ service.get_service_type_display }}</div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="page-subtitle" style="margin-top:4px;">
+        For <a href="{% url 'environments:detail' service.environment.pk %}" style="color:var(--accent-light);text-decoration:none;">{{ service.environment.name }}</a>
+      </div>
+    </div>
+    <a href="{% url 'environments:detail' service.environment.pk %}" class="btn btn-secondary">← Back</a>
+  </div>
+
+  <!-- Info banner -->
+  {% if service.service_type == 'recast_workspace' or service.service_type == 'recast_user_license' %}
+  <div class="card" style="margin-bottom:20px;border-color:rgba(99,102,241,0.2);background:var(--accent-dim);">
+    <div style="display:flex;gap:12px;">
+      <span style="font-size:18px;">ℹ️</span>
+      <div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">
+        Enter your Recast Application API URL and API key. Billed per
+        {% if service.service_type == 'recast_workspace' %}workspace count{% else %}user (org member){% endif %}.
+      </div>
+    </div>
+  </div>
+  {% elif service.service_type == 'windows_365' %}
+  <div class="card" style="margin-bottom:20px;border-color:rgba(6,182,212,0.2);background:rgba(6,182,212,0.05);">
+    <div style="display:flex;gap:12px;">
+      <span style="font-size:18px;">ℹ️</span>
+      <div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">
+        Requires an Azure App Registration with <strong>CloudPC.Read.All</strong> permissions. Billed per provisioned Cloud PC.
+      </div>
+    </div>
+  </div>
+  {% elif service.service_type == 'intune' %}
+  <div class="card" style="margin-bottom:20px;border-color:rgba(16,185,129,0.2);background:rgba(16,185,129,0.05);">
+    <div style="display:flex;gap:12px;">
+      <span style="font-size:18px;">ℹ️</span>
+      <div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">
+        Requires Graph API with Intune permissions. Flat billing per environment.
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+
+    <!-- Service name -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title" style="margin-bottom:16px;">Service Name</div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">
+          Display name
+          <span style="font-weight:400;color:var(--text-muted);margin-left:4px;">(optional)</span>
+        </label>
+        {{ name_form.name }}
+        <div style="font-size:12px;color:var(--text-muted);margin-top:5px;">
+          Leave blank to use the default service type name.
+        </div>
+        {% if name_form.name.errors %}
+        <div style="color:#ef4444;font-size:12px;margin-top:4px;">{{ name_form.name.errors.0 }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Connection Settings -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title" style="margin-bottom:16px;">Connection Settings</div>
+      {% if config_form %}
+        {% for field in config_form %}
+        <div class="form-group">
+          <label class="form-label">{{ field.label }}</label>
+          <div style="position:relative;">
+            {{ field }}
+            {% if 'key' in field.html_name or 'secret' in field.html_name %}
+            <button type="button" onclick="toggleSecret(this)"
+              style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:13px;padding:4px;">👁</button>
+            {% endif %}
+          </div>
+          {% if field.errors %}<div style="color:#ef4444;font-size:12px;margin-top:4px;">{{ field.errors.0 }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="color:var(--text-muted);font-size:13.5px;">No connection settings required.</div>
+      {% endif %}
+    </div>
+
+    <!-- Plan Selection -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header" style="margin-bottom:16px;">
+        <div>
+          <div class="card-title">Billing Plan</div>
+          <div class="card-subtitle">Select a plan to activate billing for this service</div>
+        </div>
+      </div>
+
+      {% if active_subscription %}
+      <div style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:10px;background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.2);">
+        <span style="font-size:20px;">✓</span>
+        <div style="flex:1;">
+          <div style="font-size:13.5px;font-weight:700;color:var(--success);">{{ active_subscription.plan.name }}</div>
+          <div style="font-size:12px;color:var(--text-muted);">€{{ active_subscription.plan.price_per_unit }}/{{ active_subscription.plan.unit_label }} · {{ active_subscription.get_status_display }}</div>
+        </div>
+        <a href="{% url 'billing:subscription_cancel' active_subscription.pk %}" class="btn btn-danger btn-xs">Cancel</a>
+      </div>
+      {% elif available_plans %}
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        {% for plan in available_plans %}
+        <label style="cursor:pointer;">
+          <input type="radio" name="plan_id" value="{{ plan.pk }}" style="display:none;" onchange="selectPlan(this)">
+          <div class="plan-option" id="plan-{{ plan.pk }}"
+            style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:10px;border:2px solid var(--border);background:var(--bg-raised);transition:all 0.15s;">
+            <div>
+              <div style="font-size:14px;font-weight:700;">{{ plan.name }}</div>
+              {% if plan.description %}<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">{{ plan.description }}</div>{% endif %}
+            </div>
+            <div style="text-align:right;flex-shrink:0;margin-left:16px;">
+              <div style="font-size:16px;font-weight:800;font-family:'JetBrains Mono',monospace;">€{{ plan.price_per_unit }}</div>
+              <div style="font-size:11px;color:var(--text-muted);">per {{ plan.unit_label }}</div>
+            </div>
+          </div>
+        </label>
+        {% endfor %}
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:var(--text-muted);">
+        A subscription will be created automatically when you save.
+      </div>
+      {% else %}
+      <div style="padding:16px;border-radius:10px;background:var(--bg-raised);border:1px solid var(--border);text-align:center;">
+        <div style="font-size:13.5px;color:var(--text-muted);">No plans assigned to this service yet.</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">A superadmin can add plans via Django Admin → Billing → Plans.</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <a href="{% url 'environments:detail' service.environment.pk %}" class="btn btn-secondary" style="flex:1;justify-content:center;">Cancel</a>
+      <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center;">Save Configuration</button>
+    </div>
+  </form>
+
+  <!-- Danger Zone -->
+  <div class="card" style="margin-top:20px;border-color:rgba(239,68,68,0.15);">
+    <div style="font-size:13px;font-weight:700;color:var(--error);margin-bottom:12px;">Danger Zone</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:13.5px;font-weight:600;">Remove this service</div>
+        <div style="font-size:12px;color:var(--text-muted);">Permanently removes the service and all its configuration.</div>
+      </div>
+      <a href="{% url 'services:delete' service.pk %}" class="btn btn-danger btn-sm">Remove</a>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleSecret(btn) {
+  const input = btn.previousElementSibling;
+  input.type = input.type === 'password' ? 'text' : 'password';
+  btn.textContent = input.type === 'password' ? '👁' : '🙈';
+}
+function selectPlan(radio) {
+  document.querySelectorAll('.plan-option').forEach(el => {
+    el.style.borderColor = 'var(--border)';
+    el.style.background = 'var(--bg-raised)';
+  });
+  const opt = document.getElementById('plan-' + radio.value);
+  if (opt) { opt.style.borderColor = 'var(--accent)'; opt.style.background = 'var(--accent-dim)'; }
+}
+</script>
+{% endblock %}

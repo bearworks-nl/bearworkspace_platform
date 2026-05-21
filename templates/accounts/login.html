@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in — WorkspaceManager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --accent: #6366f1; --accent-light: #818cf8; }
+    [data-theme="dark"] {
+      --bg-base: #0d0f14; --bg-surface: #13161e; --bg-raised: #1a1e2a;
+      --border: rgba(255,255,255,0.07); --border-strong: rgba(255,255,255,0.13);
+      --text-primary: #f0f2f8; --text-secondary: #8b91a8; --text-muted: #555c72;
+    }
+    [data-theme="light"] {
+      --bg-base: #f4f6fb; --bg-surface: #ffffff; --bg-raised: #eef0f7;
+      --border: rgba(0,0,0,0.07); --border-strong: rgba(0,0,0,0.13);
+      --text-primary: #0f1120; --text-secondary: #4b5263; --text-muted: #9ba3b5;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg-base); color: var(--text-primary); min-height: 100vh; display: flex; }
+    .auth-split { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; width: 100%; }
+    .auth-left {
+      background: linear-gradient(135deg, #0d0f14 0%, #1a1040 100%);
+      display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
+      padding: 60px; position: relative; overflow: hidden;
+    }
+    .auth-left::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse 60% 60% at 30% 30%, rgba(99,102,241,0.2), transparent);
+    }
+    .auth-left-content { position: relative; z-index: 1; }
+    .auth-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 60px; }
+    .logo-mark { width: 40px; height: 40px; border-radius: 10px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: white; }
+    .logo-text { font-size: 18px; font-weight: 700; color: white; }
+    .auth-quote { font-size: 28px; font-weight: 800; color: white; line-height: 1.3; margin-bottom: 16px; letter-spacing: -0.5px; }
+    .auth-quote-sub { font-size: 15px; color: rgba(255,255,255,0.5); line-height: 1.6; }
+    .auth-features { margin-top: 48px; display: flex; flex-direction: column; gap: 14px; }
+    .auth-feature { display: flex; align-items: center; gap: 12px; }
+    .auth-feature-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+    .auth-feature span { font-size: 14px; color: rgba(255,255,255,0.6); }
+    .auth-right { display: flex; align-items: center; justify-content: center; padding: 60px; background: var(--bg-base); }
+    .auth-box { width: 100%; max-width: 400px; }
+    .auth-title { font-size: 26px; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.5px; }
+    .auth-subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; }
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
+    .form-label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .form-input { width: 100%; background: var(--bg-raised); border: 1px solid var(--border-strong); border-radius: 9px; padding: 11px 14px; color: var(--text-primary); font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.15s; }
+    .form-input:focus { border-color: var(--accent); }
+    .form-input::placeholder { color: var(--text-muted); }
+    .btn-submit { width: 100%; padding: 12px; border-radius: 9px; background: var(--accent); color: white; font-size: 15px; font-weight: 700; font-family: inherit; border: none; cursor: pointer; transition: all 0.15s; }
+    .btn-submit:hover { background: var(--accent-light); }
+    .auth-link { font-size: 13.5px; color: var(--text-muted); text-align: center; margin-top: 20px; }
+    .auth-link a { color: var(--accent-light); text-decoration: none; font-weight: 600; }
+    .error-msg { color: #ef4444; font-size: 12px; margin-top: 4px; }
+    .alert { padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 13.5px; }
+    .alert-error { background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }
+    .forgot-link { color: var(--accent-light); font-weight: 500; font-size: 12px; text-decoration: none; }
+    @media (max-width: 768px) { .auth-split { grid-template-columns: 1fr; } .auth-left { display: none; } .auth-right { padding: 40px 24px; } }
+  </style>
+</head>
+<body>
+  <div class="auth-split">
+    <div class="auth-left">
+      <div class="auth-left-content">
+        <div class="auth-logo">
+          <div class="logo-mark">W</div>
+          <span class="logo-text">WorkspaceMgr</span>
+        </div>
+        <div class="auth-quote">Your workspaces,<br>fully automated.</div>
+        <div class="auth-quote-sub">Manage Recast, Windows 365, and Intune environments with automated billing and RBAC.</div>
+        <div class="auth-features">
+          <div class="auth-feature"><div class="auth-feature-dot"></div><span>Provision environments in seconds</span></div>
+          <div class="auth-feature"><div class="auth-feature-dot"></div><span>Automated monthly invoicing via Mollie</span></div>
+          <div class="auth-feature"><div class="auth-feature-dot"></div><span>Full role-based access control</span></div>
+          <div class="auth-feature"><div class="auth-feature-dot"></div><span>Azure & Microsoft Graph integration</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-right">
+      <div class="auth-box">
+        <div class="auth-title">Welcome back</div>
+        <div class="auth-subtitle">Sign in to your account</div>
+
+        {% if messages %}
+          {% for message in messages %}
+          <div class="alert alert-error">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+
+        <form method="post" action="{% url 'accounts:login' %}">
+          {% csrf_token %}
+          <div class="form-group">
+            <label class="form-label">Email address</label>
+            {{ form.username }}
+            {% if form.username.errors %}<div class="error-msg">{{ form.username.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group">
+            <div class="form-label-row">
+              <label class="form-label" style="margin-bottom:0;">Password</label>
+              <a href="{% url 'accounts:password_reset' %}" class="forgot-link">Forgot password?</a>
+            </div>
+            {{ form.password }}
+            {% if form.password.errors %}<div class="error-msg">{{ form.password.errors.0 }}</div>{% endif %}
+          </div>
+          <button type="submit" class="btn-submit">Sign in →</button>
+        </form>
+
+        <div class="auth-link">
+          Don't have an account? <a href="{% url 'accounts:register' %}">Create one free</a>
+        </div>
+        <div class="auth-link" style="margin-top:8px;">
+          <a href="{% url 'core:landing' %}" style="color:var(--text-muted);">← Back to home</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const t = localStorage.getItem('wm_theme') || 'dark';
+    const r = t === 'system' ? (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light') : t;
+    document.documentElement.setAttribute('data-theme', r);
+    const accent = localStorage.getItem('wm_accent');
+    if (accent) document.documentElement.style.setProperty('--accent', accent);
+  </script>
+</body>
+</html>

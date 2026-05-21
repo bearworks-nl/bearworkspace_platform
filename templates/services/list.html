@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Services — WorkspaceManager{% endblock %}
+{% block page_title %}Services{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Services</div>
+    <div class="page-subtitle">
+      {% if selected_env %}Services in <strong>{{ selected_env.name }}</strong>{% else %}All services across your environments{% endif %}
+    </div>
+  </div>
+  {% if selected_env %}
+  <a href="{% url 'services:enable' selected_env.pk %}" class="btn btn-primary">
+    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Add Service
+  </a>
+  {% endif %}
+</div>
+
+<!-- Environment filter tabs -->
+{% if environments %}
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+  <a href="{% url 'services:list' %}"
+     style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;transition:all 0.15s;
+            {% if not selected_env %}background:var(--accent);color:white;{% else %}background:var(--bg-raised);color:var(--text-secondary);border:1px solid var(--border-strong);{% endif %}">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    All
+  </a>
+  {% for env in environments %}
+  <a href="{% url 'services:list' %}?env={{ env.pk }}"
+     style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;transition:all 0.15s;
+            {% if selected_env.pk == env.pk %}background:var(--accent);color:white;{% else %}background:var(--bg-raised);color:var(--text-secondary);border:1px solid var(--border-strong);{% endif %}">
+    <span style="width:8px;height:8px;border-radius:50%;background:{% if env.status == 'active' %}var(--success){% else %}var(--text-muted){% endif %};flex-shrink:0;"></span>
+    {{ env.name }}
+    <span style="font-size:11px;opacity:0.7;">({{ env.services.count }})</span>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Services grid -->
+{% if services %}
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
+  {% for service in services %}
+  <div class="card">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="font-size:28px;line-height:1;">{{ service.icon }}</div>
+        <div>
+          <div style="font-size:13.5px;font-weight:700;color:var(--text-primary);">{{ service.get_service_type_display }}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:1px;">
+            <a href="{% url 'environments:detail' service.environment.pk %}" style="color:var(--accent-light);text-decoration:none;">{{ service.environment.name }}</a>
+          </div>
+        </div>
+      </div>
+      <!-- Toggle -->
+      <form method="post" action="{% url 'services:toggle' service.pk %}">
+        {% csrf_token %}
+        <button type="submit" title="{% if service.enabled %}Disable{% else %}Enable{% endif %}"
+          style="width:40px;height:24px;border-radius:12px;border:none;cursor:pointer;position:relative;transition:all 0.2s;
+                 background:{% if service.enabled %}var(--accent){% else %}var(--bg-raised);border:1px solid var(--border-strong){% endif %};">
+          <div style="position:absolute;top:3px;{% if service.enabled %}right:3px{% else %}left:3px{% endif %};width:18px;height:18px;border-radius:50%;background:white;transition:all 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>
+        </button>
+      </form>
+    </div>
+
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:14px;">
+      <span class="badge {% if service.status == 'active' %}badge-green{% elif service.status == 'error' %}badge-red{% elif service.status == 'configuring' %}badge-yellow{% else %}badge-gray{% endif %}">
+        {{ service.get_status_display }}
+      </span>
+      {% if service.subscriptions.exists %}
+      <span class="badge badge-blue">● Subscribed</span>
+      {% else %}
+      <span class="badge badge-gray">No plan</span>
+      {% endif %}
+    </div>
+
+    <div style="display:flex;gap:6px;">
+      <a href="{% url 'services:configure' service.pk %}" class="btn btn-secondary btn-sm" style="flex:1;justify-content:center;">Configure</a>
+      <a href="{% url 'services:delete' service.pk %}" class="btn btn-danger btn-sm">Remove</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div style="text-align:center;padding:80px 0;">
+  <div style="font-size:64px;margin-bottom:16px;">⚙️</div>
+  {% if selected_env %}
+  <div style="font-size:18px;font-weight:700;margin-bottom:8px;">No services in {{ selected_env.name }}</div>
+  <div style="font-size:14px;color:var(--text-muted);margin-bottom:24px;">Add a service to get started.</div>
+  <a href="{% url 'services:enable' selected_env.pk %}" class="btn btn-primary">Add Service</a>
+  {% elif environments %}
+  <div style="font-size:18px;font-weight:700;margin-bottom:8px;">No services yet</div>
+  <div style="font-size:14px;color:var(--text-muted);margin-bottom:24px;">Select an environment above and add your first service.</div>
+  {% else %}
+  <div style="font-size:18px;font-weight:700;margin-bottom:8px;">No environments yet</div>
+  <div style="font-size:14px;color:var(--text-muted);margin-bottom:24px;">Create an environment first, then add services.</div>
+  <a href="{% url 'environments:create' %}" class="btn btn-primary">Create Environment</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

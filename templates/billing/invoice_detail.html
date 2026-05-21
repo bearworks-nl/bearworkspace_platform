@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}Invoice {{ invoice.invoice_number }} — WorkspaceManager{% endblock %}
+{% block page_title %}Invoice{% endblock %}
+
+{% block content %}
+<div style="max-width:680px;">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Invoice {{ invoice.invoice_number }}</div>
+      <div class="page-subtitle">{{ invoice.period_start|date:"d M Y" }} – {{ invoice.period_end|date:"d M Y" }}</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <a href="{% url 'billing:invoice_list' %}" class="btn btn-secondary">← Back</a>
+    </div>
+  </div>
+
+  <!-- Invoice Card -->
+  <div class="card">
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border);">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+          <div class="logo-mark" style="width:36px;height:36px;font-size:16px;font-weight:800;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;">W</div>
+          <span style="font-size:16px;font-weight:700;">WorkspaceManager</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">invoices@workspacemgr.io</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;">Status</div>
+        <span class="badge
+          {% if invoice.status == 'paid' %}badge-green
+          {% elif invoice.status == 'failed' %}badge-red
+          {% elif invoice.status == 'open' %}badge-yellow
+          {% else %}badge-gray{% endif %}" style="font-size:13px;padding:4px 12px;">
+          {{ invoice.get_status_display }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Bill To -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px;">
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:6px;">Bill To</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text-primary);">{{ invoice.user.display_name }}</div>
+        <div style="font-size:13px;color:var(--text-secondary);">{{ invoice.user.email }}</div>
+        {% with company=invoice.user.company %}
+        {% if company %}
+        <div style="font-size:13px;color:var(--text-secondary);">{{ company.name }}</div>
+        {% if company.vat_number %}<div style="font-size:12px;color:var(--text-muted);">VAT: {{ company.vat_number }}</div>{% endif %}
+        {% endif %}
+        {% endwith %}
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:6px;">Invoice Details</div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;">
+            <span style="color:var(--text-muted);">Invoice #</span>
+            <span style="font-weight:600;font-family:'JetBrains Mono',monospace;">{{ invoice.invoice_number }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;">
+            <span style="color:var(--text-muted);">Issued</span>
+            <span>{{ invoice.created_at|date:"d M Y" }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;">
+            <span style="color:var(--text-muted);">Due date</span>
+            <span>{{ invoice.due_date|date:"d M Y"|default:"—" }}</span>
+          </div>
+          {% if invoice.paid_at %}
+          <div style="display:flex;justify-content:space-between;font-size:13px;">
+            <span style="color:var(--text-muted);">Paid at</span>
+            <span style="color:var(--success);">{{ invoice.paid_at|date:"d M Y H:i" }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Line Items -->
+    <div style="margin-bottom:20px;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);padding:8px 0;">Description</th>
+            <th style="text-align:right;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);padding:8px 0;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if invoice.subscription %}
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:12px 0;">
+              <div style="font-size:14px;font-weight:600;color:var(--text-primary);">{{ invoice.subscription.plan.name }}</div>
+              <div style="font-size:12px;color:var(--text-muted);">{{ invoice.period_start|date:"d M Y" }} – {{ invoice.period_end|date:"d M Y" }}</div>
+            </td>
+            <td style="text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;padding:12px 0;">€{{ invoice.amount }}</td>
+          </tr>
+          {% else %}
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:12px 0;font-size:14px;color:var(--text-primary);">Services — {{ invoice.period_start|date:"M Y" }}</td>
+            <td style="text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;padding:12px 0;">€{{ invoice.amount }}</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Totals -->
+    <div style="border-top:1px solid var(--border);padding-top:16px;">
+      <div style="display:flex;justify-content:flex-end;">
+        <div style="min-width:220px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:13px;color:var(--text-muted);">Subtotal</span>
+            <span style="font-size:13px;font-family:'JetBrains Mono',monospace;">€{{ invoice.amount }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+            <span style="font-size:13px;color:var(--text-muted);">VAT (21%)</span>
+            <span style="font-size:13px;font-family:'JetBrains Mono',monospace;">€{{ invoice.tax_amount }}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding-top:10px;border-top:2px solid var(--border-strong);">
+            <span style="font-size:15px;font-weight:700;">Total</span>
+            <span style="font-size:15px;font-weight:800;font-family:'JetBrains Mono',monospace;">€{{ invoice.total }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% if invoice.mollie_payment_id %}
+    <div style="margin-top:16px;padding:10px 14px;background:var(--bg-raised);border-radius:8px;font-size:12px;color:var(--text-muted);">
+      Payment ID: <span style="font-family:'JetBrains Mono',monospace;">{{ invoice.mollie_payment_id }}</span>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

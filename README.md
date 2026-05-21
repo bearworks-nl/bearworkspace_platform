@@ -1,123 +1,138 @@
-# Admin Dashboard
+# WorkspaceManager
 
-Django + HTMX + Tailwind admin dashboard with customer management, product integrations (Recast Application Workspace, Windows 365, Microsoft Intune), usage-based subscriptions via Mollie, and PostgreSQL.
+A full-stack Django 5 workspace management platform for Recast, Windows 365, and Intune — with usage-based billing via Mollie and RBAC access control.
 
 ## Stack
 
-| Layer | Technology |
-|---|---|
-| Backend | Django 5, Python 3.12 |
-| Frontend | Django templates + HTMX + Tailwind CSS (CDN) |
-| Database | PostgreSQL 16 |
-| Task queue | Celery + Redis |
-| Payments | Mollie (subscriptions + mandates) |
-| MS integrations | MSAL + Microsoft Graph API |
-| Deployment | Azure App Service + Azure DB for PostgreSQL |
+- **Backend**: Django 5 + Celery
+- **Frontend**: HTMX-ready + Tailwind CDN + custom CSS design system
+- **Database**: SQLite (dev) / PostgreSQL (production)
+- **Billing**: Mollie recurring payments
+- **APIs**: Microsoft Graph API (Windows 365 + Intune), Recast API
+- **Hosting**: Azure-ready
 
-## Project structure
+---
+
+## Quick Start (Windows, local dev, no Docker)
+
+```powershell
+# 1. Clone & setup
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements/base.txt
+
+# 2. Configure environment
+copy .env.example .env
+# Edit .env with your values (SQLite works out of the box)
+
+# 3. Run migrations
+python manage.py migrate
+
+# 4. Create superuser
+python manage.py createsuperuser
+
+# 5. Set up billing schedule
+python manage.py setup_billing_schedule
+
+# 6. Start dev server
+python manage.py runserver
+```
+
+Open http://127.0.0.1:8000
+
+---
+
+## Project Structure
 
 ```
-dashboard/
-├── config/              # Django settings, URLs, Celery, WSGI
+workspace_manager/
 ├── apps/
-│   ├── accounts/        # Custom user model, auth, password reset
-│   ├── customers/       # Customer CRUD
-│   ├── organisations/   # Organisations/teams + memberships
-│   ├── products/        # Product instances, Recast/W365/Intune configs, Graph API
-│   └── billing/         # Plans, subscriptions, usage snapshots, invoices, Mollie
-├── templates/           # Django HTML templates
-│   └── partials/        # HTMX partial fragments
-├── static/              # CSS / JS / images
-└── requirements/
-    └── base.txt
+│   ├── accounts/        # Custom User (email login), RBAC roles, avatars
+│   ├── users/           # Profile, Company info, User management
+│   ├── environments/    # Environments + memberships
+│   ├── services/        # Recast, W365, Intune services + configurations
+│   ├── billing/         # Plans, Subscriptions, Usage snapshots, Invoices
+│   └── core/            # Dashboard, landing, context processors
+├── templates/
+│   ├── base.html        # Main layout: sidebar, topbar, theme system
+│   ├── accounts/        # Login, register, password reset
+│   ├── users/           # Profile (with avatar picker), user management
+│   ├── environments/    # Environment CRUD
+│   ├── services/        # Service enable, configure
+│   ├── billing/         # Overview, invoices, plans
+│   └── core/            # Dashboard, landing page
+├── static/
+│   └── img/avatars/     # 12 SVG avatars
+└── workspace_manager/
+    ├── settings.py
+    ├── urls.py
+    └── celery.py
 ```
 
-## Local setup
+---
 
-### 1. Clone and configure environment
-
-```bash
-cp .env.example .env
-# Edit .env with your values
-```
-
-### 2. Start with Docker Compose
-
-```bash
-docker compose up -d
-```
-
-### 3. Run migrations and create superuser
-
-```bash
-docker compose exec web python manage.py migrate
-docker compose exec web python manage.py createsuperuser
-```
-
-### 4. Set up billing schedule
-
-```bash
-docker compose exec web python manage.py setup_billing_schedule
-```
-
-### 5. Open the dashboard
-
-Visit http://localhost:8000 and sign in.
-
-## Data model hierarchy
-
-```
-Customer
-└── Organisation (many per customer)
-    └── ProductInstance (many per org, one per product type)
-        ├── RecastWorkspaceConfig
-        ├── Windows365Config → CloudPC[]
-        ├── IntuneConfig → IntunePolicy[]
-        └── Subscription → UsageSnapshot[] → Invoice[]
-```
-
-## RBAC roles
+## RBAC Roles
 
 | Role | Access |
-|---|---|
-| `superadmin` | Full platform access, all customers |
-| `customer_admin` | Full access within their customer |
-| `org_admin` | Scoped to specific organisations (via OrganisationMembership) |
-| `viewer` | Read-only within their customer |
+|------|--------|
+| `superadmin` | Full access, user deletion, Django admin |
+| `customer_admin` | User management, all environments & services |
+| `env_admin` | Assigned environments only |
+| `customer_member` | Read-only on assigned environments |
 
-## Billing flow
+---
 
-1. Product is enabled for an organisation → `Subscription` created (status: `trialing`)
-2. Customer sets up payment mandate via Mollie first-payment flow
-3. Celery beat runs on 1st of each month → `snapshot_usage` task captures unit count
-4. Invoice is created → `charge_invoice` task triggers Mollie recurring payment
-5. Mollie webhook fires → invoice marked `paid` or subscription set to `past_due`
+## Services
 
-### Usage units per product
+| Service | Config | Billed per |
+|---------|--------|------------|
+| Recast Application Workspace | URL + API key | Per workspace |
+| Recast User License | URL + API key | Per org member |
+| Windows 365 Cloud PC | App ID + Tenant ID | Per provisioned device |
+| Microsoft Intune | App ID + Tenant ID + JSON policy | Per environment (flat) |
 
-| Product | Billed unit |
-|---|---|
-| Recast Application Workspace | Per organisation member |
-| Windows 365 | Per provisioned Cloud PC |
-| Microsoft Intune | Per organisation (flat) |
+---
 
-## Microsoft Graph API setup
+## Billing Flow
 
-1. Register an App Registration in Azure Entra ID
-2. Grant application permissions: `CloudPC.Read.All`, `DeviceManagementConfiguration.ReadWrite.All`
-3. Set `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET` in `.env`
+1. Superadmin creates Plans in Django admin (`/admin/`)
+2. User enables a Service → Subscription auto-created (status: trialing)
+3. Customer sets up Mollie payment mandate (first-payment flow)
+4. Celery beat runs on the 1st of each month:
+   - Snapshots usage per subscription
+   - Creates Invoice records
+   - Triggers Mollie recurring charge
+5. Mollie webhook → updates invoice/subscription status
 
-Each organisation stores its own `azure_tenant_id` — the app uses client credentials to call Graph on behalf of each tenant.
+---
 
-## Azure deployment
+## Theme System
 
-```bash
-# Build and push Docker image to Azure Container Registry
-az acr build --registry <acr-name> --image dashboard:latest .
+- **Dark / Light / System** mode (saved to `localStorage`)
+- **6 preset accent colors** + custom hex picker
+- **Collapsible sidebar** (mini/full modes)
+- Theme panel: click the ⊞ sliders icon in the topbar
 
-# Deploy to App Service (assumes App Service Plan exists)
-az webapp create --resource-group <rg> --plan <plan> --name <app-name> \
-  --deployment-container-image-name <acr-name>.azurecr.io/dashboard:latest
+---
+
+## Environment Variables
+
+See `.env.example` for all options. Key ones:
+
+```env
+SECRET_KEY=your-secret-key
+DEBUG=True
+CELERY_TASK_ALWAYS_EAGER=True   # No Redis needed for local dev
+MOLLIE_API_KEY=test_xxxx        # Mollie test key
 ```
 
-Set all `.env` values as App Service environment variables, using Azure Key Vault references for secrets.
+---
+
+## Production (Azure)
+
+1. Set `DEBUG=False`
+2. Configure PostgreSQL via `DB_*` env vars
+3. Set up Redis for Celery: `REDIS_URL=redis://...`
+4. Set `CELERY_TASK_ALWAYS_EAGER=False`
+5. Run `python manage.py collectstatic`
+6. Configure Mollie webhook URL: `https://yourdomain.com/billing/webhook/`

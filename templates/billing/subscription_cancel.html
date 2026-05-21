@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Cancel Subscription{% endblock %}
+{% block page_title %}Cancel Subscription{% endblock %}
+{% block content %}
+<div style="max-width:480px;">
+  <div class="card" style="border-color:rgba(239,68,68,0.2);">
+    <div style="text-align:center;padding:12px 0 20px;">
+      <div style="font-size:48px;margin-bottom:12px;">⚠️</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:8px;">Cancel "{{ subscription.plan.name }}"?</div>
+      <div style="font-size:14px;color:var(--text-muted);line-height:1.6;">
+        Your subscription will be canceled immediately. You won't be charged further, but you'll lose access to this service plan.
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <a href="{% url 'billing:overview' %}" class="btn btn-secondary" style="flex:1;justify-content:center;">Keep Subscription</a>
+      <form method="post" style="flex:1;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger" style="width:100%;justify-content:center;">Yes, Cancel</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

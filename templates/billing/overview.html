@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Billing — WorkspaceManager{% endblock %}
+{% block page_title %}Billing{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Billing</div>
+    <div class="page-subtitle">Manage your subscriptions and payment methods</div>
+  </div>
+  <a href="{% url 'billing:plan_list' %}" class="btn btn-primary">View Plans</a>
+</div>
+
+<!-- Billing Stats -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;">
+  <div class="stat-card">
+    <div class="stat-label">Active Subscriptions</div>
+    <div class="stat-value" style="color:var(--info);">{{ subscriptions.count }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Open Invoices</div>
+    <div class="stat-value" style="color:var(--warning);">
+      {% with open_count=invoices|length %}{{ open_count }}{% endwith %}
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Payment Method</div>
+    <div style="font-size:15px;font-weight:600;margin-top:8px;">
+      {% if user.company.mollie_customer_id %}
+      <span style="color:var(--success);">● Configured</span>
+      {% else %}
+      <span style="color:var(--warning);">⚠ Not set up</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+  <!-- Subscriptions -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Subscriptions</div>
+        <div class="card-subtitle">Your active service plans</div>
+      </div>
+    </div>
+
+    {% if subscriptions %}
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      {% for sub in subscriptions %}
+      <div style="padding:14px;border-radius:10px;border:1px solid var(--border);background:var(--bg-raised);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div style="font-size:13.5px;font-weight:700;">{{ sub.plan.name }}</div>
+          <span class="badge
+            {% if sub.status == 'active' %}badge-green
+            {% elif sub.status == 'trialing' %}badge-blue
+            {% elif sub.status == 'past_due' %}badge-red
+            {% elif sub.status == 'canceled' %}badge-gray
+            {% else %}badge-yellow{% endif %}">
+            {{ sub.get_status_display }}
+          </span>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">
+          €{{ sub.plan.price_per_unit }} / {{ sub.plan.unit_label }} · {{ sub.plan.get_billing_period_display }}
+        </div>
+        {% if sub.service %}
+        <div style="font-size:12px;color:var(--text-secondary);">
+          {{ sub.service.icon }} {{ sub.service.environment.name }}
+        </div>
+        {% endif %}
+        {% if sub.status != 'canceled' %}
+        <div style="margin-top:10px;">
+          <a href="{% url 'billing:subscription_cancel' sub.pk %}" class="btn btn-danger btn-xs">Cancel</a>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:32px 0;">
+      <div style="font-size:40px;margin-bottom:10px;">📋</div>
+      <div style="font-size:14px;color:var(--text-muted);margin-bottom:14px;">No subscriptions yet</div>
+      <a href="{% url 'billing:plan_list' %}" class="btn btn-primary btn-sm">Browse Plans</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Recent Invoices -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Recent Invoices</div>
+        <div class="card-subtitle">Last 10 invoices</div>
+      </div>
+      <a href="{% url 'billing:invoice_list' %}" class="btn btn-secondary btn-sm">All invoices</a>
+    </div>
+
+    {% if invoices %}
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      {% for invoice in invoices %}
+      <a href="{% url 'billing:invoice_detail' invoice.pk %}" style="text-decoration:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;border-radius:9px;border:1px solid var(--border);background:var(--bg-raised);transition:all 0.15s;" onmouseover="this.style.borderColor='rgba(99,102,241,0.3)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-primary);">{{ invoice.invoice_number }}</div>
+            <div style="font-size:11.5px;color:var(--text-muted);">{{ invoice.period_start|date:"d M" }} – {{ invoice.period_end|date:"d M Y" }}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace;">€{{ invoice.total }}</div>
+            <span class="badge
+              {% if invoice.status == 'paid' %}badge-green
+              {% elif invoice.status == 'failed' %}badge-red
+              {% elif invoice.status == 'open' %}badge-yellow
+              {% else %}badge-gray{% endif %}">
+              {{ invoice.get_status_display }}
+            </span>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:32px 0;">
+      <div style="font-size:40px;margin-bottom:10px;">🧾</div>
+      <div style="font-size:14px;color:var(--text-muted);">No invoices yet</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Plans section -->
+<div style="margin-top:28px;">
+  <div style="font-size:16px;font-weight:700;margin-bottom:16px;">Available Plans</div>
+  {% if plans %}
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;">
+    {% for plan in plans %}
+    <div class="card" style="position:relative;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:6px;">{{ plan.get_billing_period_display }}</div>
+      <div style="font-size:16px;font-weight:800;margin-bottom:4px;">{{ plan.name }}</div>
+      <div style="font-size:24px;font-weight:800;font-family:'JetBrains Mono',monospace;margin-bottom:4px;">
+        €{{ plan.price_per_unit }}<span style="font-size:13px;font-weight:500;color:var(--text-muted);">/{{ plan.unit_label }}</span>
+      </div>
+      {% if plan.description %}
+      <div style="font-size:12.5px;color:var(--text-muted);margin-top:6px;line-height:1.5;">{{ plan.description }}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;padding:32px;color:var(--text-muted);">
+    No plans configured yet. A superadmin can add plans via the Django admin.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

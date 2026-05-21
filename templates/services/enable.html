@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Add Service — WorkspaceManager{% endblock %}
+{% block page_title %}Add Service{% endblock %}
+
+{% block content %}
+<div style="max-width:580px;">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Add Service</div>
+      <div class="page-subtitle">Enable a new service for <strong>{{ environment.name }}</strong></div>
+    </div>
+    <a href="{% url 'environments:detail' environment.pk %}" class="btn btn-secondary">← Back</a>
+  </div>
+
+  <form method="post" id="enable-form">
+    {% csrf_token %}
+
+    <!-- Step 1: Pick service type -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title" style="margin-bottom:16px;">1 — Select service type</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <label style="cursor:pointer;">
+          <input type="radio" name="service_type" value="recast_workspace" style="display:none;" onchange="selectType(this)">
+          <div class="type-card" id="type-recast_workspace">
+            <div style="font-size:28px;margin-bottom:8px;">🖥️</div>
+            <div style="font-size:13.5px;font-weight:700;margin-bottom:3px;">Recast Workspace</div>
+            <div style="font-size:11.5px;color:var(--text-muted);line-height:1.4;">Billed per workspace via API</div>
+          </div>
+        </label>
+        <label style="cursor:pointer;">
+          <input type="radio" name="service_type" value="recast_user_license" style="display:none;" onchange="selectType(this)">
+          <div class="type-card" id="type-recast_user_license">
+            <div style="font-size:28px;margin-bottom:8px;">👤</div>
+            <div style="font-size:13.5px;font-weight:700;margin-bottom:3px;">Recast User License</div>
+            <div style="font-size:11.5px;color:var(--text-muted);line-height:1.4;">Billed per org member</div>
+          </div>
+        </label>
+        <label style="cursor:pointer;">
+          <input type="radio" name="service_type" value="windows_365" style="display:none;" onchange="selectType(this)">
+          <div class="type-card" id="type-windows_365">
+            <div style="font-size:28px;margin-bottom:8px;">☁️</div>
+            <div style="font-size:13.5px;font-weight:700;margin-bottom:3px;">Windows 365 Cloud PC</div>
+            <div style="font-size:11.5px;color:var(--text-muted);line-height:1.4;">Billed per provisioned device</div>
+          </div>
+        </label>
+        <label style="cursor:pointer;">
+          <input type="radio" name="service_type" value="intune" style="display:none;" onchange="selectType(this)">
+          <div class="type-card" id="type-intune">
+            <div style="font-size:28px;margin-bottom:8px;">🛡️</div>
+            <div style="font-size:13.5px;font-weight:700;margin-bottom:3px;">Microsoft Intune</div>
+            <div style="font-size:11.5px;color:var(--text-muted);line-height:1.4;">Flat billing per environment</div>
+          </div>
+        </label>
+      </div>
+      {% if form.service_type.errors %}
+      <div style="color:#ef4444;font-size:12px;margin-top:8px;">{{ form.service_type.errors.0 }}</div>
+      {% endif %}
+    </div>
+
+    <!-- Step 2: Name -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title" style="margin-bottom:4px;">2 — Give it a name <span style="font-weight:400;color:var(--text-muted);font-size:12px;">(optional)</span></div>
+      <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;">
+        Useful when you have multiple services of the same type, e.g. "Client A Recast" vs "Client B Recast".
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Display name</label>
+        {{ form.name }}
+        {% if form.name.errors %}<div style="color:#ef4444;font-size:12px;margin-top:4px;">{{ form.name.errors.0 }}</div>{% endif %}
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary" id="enable-btn" disabled
+      style="width:100%;justify-content:center;padding:12px;font-size:15px;opacity:0.5;">
+      Add Service →
+    </button>
+  </form>
+</div>
+
+<style>
+  .type-card {
+    border-radius: 12px;
+    padding: 18px;
+    border: 2px solid var(--border);
+    background: var(--bg-raised);
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .type-card:hover { border-color: rgba(99,102,241,0.35); }
+  .type-card.selected { border-color: var(--accent); background: var(--accent-dim); }
+</style>
+
+<script>
+function selectType(radio) {
+  document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('type-' + radio.value).classList.add('selected');
+  const btn = document.getElementById('enable-btn');
+  btn.disabled = false;
+  btn.style.opacity = '1';
+}
+</script>
+{% endblock %}

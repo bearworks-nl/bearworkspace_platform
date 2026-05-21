@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Delete Environment{% endblock %}
+{% block page_title %}Delete Environment{% endblock %}
+
+{% block content %}
+<div style="max-width:480px;">
+  <div class="card" style="border-color:rgba(239,68,68,0.2);">
+    <div style="text-align:center;padding:12px 0 20px;">
+      <div style="font-size:48px;margin-bottom:12px;">⚠️</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:8px;">Delete "{{ environment.name }}"?</div>
+      <div style="font-size:14px;color:var(--text-muted);line-height:1.6;">
+        This will permanently delete the environment and all its services and configurations. This action cannot be undone.
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <a href="{% url 'environments:detail' environment.pk %}" class="btn btn-secondary" style="flex:1;justify-content:center;">Cancel</a>
+      <form method="post" style="flex:1;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger" style="width:100%;justify-content:center;">Yes, Delete</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

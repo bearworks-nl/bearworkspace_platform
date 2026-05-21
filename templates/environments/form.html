@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — WorkspaceManager{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div style="max-width:560px;">
+  <div class="page-header">
+    <div>
+      <div class="page-title">{{ title }}</div>
+      <div class="page-subtitle">{% if environment %}Editing "{{ environment.name }}"{% else %}Create a new environment{% endif %}</div>
+    </div>
+    <a href="{% url 'environments:list' %}" class="btn btn-secondary">← Back</a>
+  </div>
+
+  <div class="card">
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="form-group">
+        <label class="form-label">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}<div style="color:#ef4444;font-size:12px;margin-top:4px;">{{ field.errors.0 }}</div>{% endif %}
+      </div>
+      {% endfor %}
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <a href="{% url 'environments:list' %}" class="btn btn-secondary" style="flex:1;justify-content:center;">Cancel</a>
+        <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center;">{{ title }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

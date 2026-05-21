@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — WorkspaceManager{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div style="max-width:600px;">
+  <div class="page-header">
+    <div>
+      <div class="page-title">{{ title }}</div>
+      <div class="page-subtitle">
+        {% if edit_user %}Editing {{ edit_user.email }}{% else %}Create a new user account{% endif %}
+      </div>
+    </div>
+    <a href="{% url 'users:user_list' %}" class="btn btn-secondary">← Back</a>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <!-- Account details -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title" style="margin-bottom:16px;">Account Details</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">{{ form.first_name.label }}</label>
+          {{ form.first_name }}
+          {% if form.first_name.errors %}<div style="color:#ef4444;font-size:12px;margin-top:3px;">{{ form.first_name.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{ form.last_name.label }}</label>
+          {{ form.last_name }}
+          {% if form.last_name.errors %}<div style="color:#ef4444;font-size:12px;margin-top:3px;">{{ form.last_name.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{{ form.email.label }}</label>
+        {{ form.email }}
+        {% if form.email.errors %}<div style="color:#ef4444;font-size:12px;margin-top:3px;">{{ form.email.errors.0 }}</div>{% endif %}
+      </div>
+
+      {% if form.password %}
+      <div class="form-group">
+        <label class="form-label">{{ form.password.label }}</label>
+        {{ form.password }}
+        {% if form.password.errors %}<div style="color:#ef4444;font-size:12px;margin-top:3px;">{{ form.password.errors.0 }}</div>{% endif %}
+      </div>
+      {% endif %}
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">{{ form.role.label }}</label>
+        {{ form.role }}
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
+          Platform-level role. Environment-specific access is set below.
+        </div>
+        {% if form.role.errors %}<div style="color:#ef4444;font-size:12px;margin-top:3px;">{{ form.role.errors.0 }}</div>{% endif %}
+      </div>
+
+      {% if form.is_active %}
+      <div class="form-group" style="margin-top:12px;margin-bottom:0;display:flex;align-items:center;gap:10px;">
+        {{ form.is_active }}
+        <label class="form-label" style="margin-bottom:0;cursor:pointer;">Active account</label>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Environment memberships -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-title" style="margin-bottom:4px;">Environment Access</div>
+      <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:16px;">
+        Select which environments this user can access, and their role within them. A user can be linked to multiple environments.
+      </div>
+
+      {% if form.environments.field.queryset.exists %}
+      <!-- Role in environments -->
+      <div class="form-group">
+        <label class="form-label">{{ form.membership_role.label }}</label>
+        {{ form.membership_role }}
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
+          This role applies to all selected environments below.
+        </div>
+      </div>
+
+      <!-- Environment checkboxes -->
+      <div class="form-label" style="margin-bottom:8px;">{{ form.environments.label }}</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        {% for checkbox in form.environments %}
+        <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;border:1px solid var(--border);background:var(--bg-raised);cursor:pointer;transition:all 0.15s;"
+          onmouseover="this.style.borderColor='rgba(99,102,241,0.3)'"
+          onmouseout="this.style.borderColor='var(--border)'">
+          <input type="checkbox" name="{{ checkbox.data.name }}" value="{{ checkbox.data.value }}"
+            {% if checkbox.data.selected %}checked{% endif %}
+            style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">
+          <span style="font-size:13.5px;font-weight:500;color:var(--text-primary);">{{ checkbox.choice_label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="padding:16px;border-radius:9px;background:var(--bg-raised);border:1px solid var(--border);text-align:center;color:var(--text-muted);font-size:13.5px;">
+        No environments available to assign.
+        {% if not user.is_superadmin %}You can only assign environments you are an admin of.{% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <a href="{% url 'users:user_list' %}" class="btn btn-secondary" style="flex:1;justify-content:center;">Cancel</a>
+      <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center;">{{ title }}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
