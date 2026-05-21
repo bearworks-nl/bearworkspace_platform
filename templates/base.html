@@ -72,6 +72,7 @@
     #sidebar.collapsed .sidebar-label,
     #sidebar.collapsed .sidebar-section-label,
     #sidebar.collapsed .sidebar-logo-text { display: none !important; }
+    #sidebar.collapsed .logo-mark { display: none !important; }
     #sidebar.collapsed .sidebar-logo { justify-content: center; }
     #sidebar.collapsed .nav-item { justify-content: center; padding: 10px 0; }
     #sidebar.collapsed .nav-item .nav-icon { margin: 0; }
@@ -125,14 +126,17 @@
       border-top: 1px solid var(--border);
     }
 
-    .collapse-btn {
+    .sidebar-collapse-btn {
+      margin-left: auto; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
-      width: 100%; padding: 8px; border-radius: 8px;
-      background: none; border: 1px solid var(--border);
+      width: 28px; height: 28px; border-radius: 6px;
+      background: var(--bg-raised);
+      border: 1px solid var(--border-strong);
       color: var(--text-muted); cursor: pointer;
-      transition: all 0.15s; font-size: 12px; gap: 6px;
+      transition: all 0.15s; padding: 0;
     }
-    .collapse-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .sidebar-collapse-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+    #sidebar.collapsed .sidebar-collapse-btn { margin-left: 0; }
 
     /* ===== Main Layout ===== */
     #main-wrap {
@@ -370,6 +374,14 @@
   <div class="sidebar-logo">
     <div class="logo-mark">W</div>
     <span class="sidebar-logo-text">WorkspaceMgr</span>
+    <button class="sidebar-collapse-btn" onclick="toggleSidebar()" title="Toggle sidebar">
+      <svg id="collapse-icon-expand" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path d="M15 18l-6-6 6-6"/>
+      </svg>
+      <svg id="collapse-icon-collapse" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="display:none;">
+        <path d="M9 18l6-6-6-6"/>
+      </svg>
+    </button>
   </div>
 
   <nav class="sidebar-nav">
@@ -422,14 +434,6 @@
     {% endif %}
   </nav>
 
-  <div class="sidebar-footer">
-    <button class="collapse-btn" onclick="toggleSidebar()">
-      <svg id="collapse-icon" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path d="M15 18l-6-6 6-6"/>
-      </svg>
-      <span class="sidebar-label">Collapse</span>
-    </button>
-  </div>
 </aside>
 
 <!-- ===== MAIN WRAP ===== -->
@@ -579,11 +583,13 @@ let sidebarCollapsed = localStorage.getItem('wm_sidebar') === 'collapsed';
 function applySidebar() {
   const sidebar = document.getElementById('sidebar');
   const mainWrap = document.getElementById('main-wrap');
-  const icon = document.getElementById('collapse-icon');
+  const iconExpand = document.getElementById('collapse-icon-expand');
+  const iconCollapse = document.getElementById('collapse-icon-collapse');
   if (!sidebar) return;
   sidebar.classList.toggle('collapsed', sidebarCollapsed);
   mainWrap?.classList.toggle('sidebar-collapsed', sidebarCollapsed);
-  if (icon) icon.setAttribute('d', sidebarCollapsed ? 'M9 18l6-6-6-6' : 'M15 18l-6-6 6-6');
+  if (iconExpand)   iconExpand.style.display   = sidebarCollapsed ? 'none' : '';
+  if (iconCollapse) iconCollapse.style.display = sidebarCollapsed ? '' : 'none';
   document.getElementById('btn-full')?.classList.toggle('active', !sidebarCollapsed);
   document.getElementById('btn-mini')?.classList.toggle('active', sidebarCollapsed);
 }
