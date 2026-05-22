@@ -12,25 +12,35 @@ def sidebar_context(request):
         .order_by('name')[:10]
     )
 
-    # Detect the currently active environment from the URL.
-    # Works for /environments/<pk>/..., /services/<pk>/... etc.
     active_env_pk = None
     resolver = getattr(request, 'resolver_match', None)
-    if resolver:
-        # Direct environment pk in the URL
-        active_env_pk = resolver.kwargs.get('pk') or resolver.kwargs.get('env_pk')
 
-        # For service URLs, look up the service's environment
-        if not active_env_pk and 'pk' in resolver.kwargs:
+    if resolver:
+        pk = resolver.kwargs.get('pk')
+        app = getattr(resolver, 'app_name', '') or ''
+
+        if app == 'services' and pk:
+            # pk is a service pk — look up its parent environment
             try:
                 from apps.services.models import Service
-                svc = Service.objects.filter(pk=resolver.kwargs['pk']).select_related('environment').first()
+                svc = (Service.objects
+                       .filter(pk=pk)
+                       .select_related('environment')
+                       .first())
                 if svc:
                     active_env_pk = svc.environment_id
             except Exception:
                 pass
 
-        # Fallback: ?env= query param used on services list
+        elif app == 'environments' and pk:
+            # pk is directly an environment pk
+            active_env_pk = pk
+
+        elif resolver.kwargs.get('env_pk'):
+            # service enable URL uses env_pk
+            active_env_pk = resolver.kwargs.get('env_pk')
+
+        # Fallback: ?env= query param on services list
         if not active_env_pk:
             active_env_pk = request.GET.get('env')
 
