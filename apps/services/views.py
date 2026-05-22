@@ -12,7 +12,7 @@ from .models import Service, RecastConfig, Windows365Config, IntuneConfig, SERVI
 
 class ServiceEnableForm(forms.Form):
     service_type = forms.ChoiceField(
-        choices=SERVICE_TYPE_CHOICES,
+        choices=[],  # set dynamically
         widget=forms.Select(attrs={'class': 'form-input'})
     )
     name = forms.CharField(
@@ -24,6 +24,10 @@ class ServiceEnableForm(forms.Form):
         }),
         help_text='Optional. If left blank the service type name is used.'
     )
+
+    def __init__(self, *args, available_choices=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['service_type'].choices = available_choices or SERVICE_TYPE_CHOICES
 
 
 class ServiceNameForm(forms.ModelForm):
@@ -88,11 +92,29 @@ def service_list(request):
 def service_enable(request, env_pk):
     """Step 1 – Add a new service (picks type + optional name)."""
     env = get_object_or_404(Environment, pk=env_pk, owner=request.user)
+
+    # Determine which service types are already added for this environment
+    existing_types = set(
+        Service.objects.filter(environment=env).values_list('service_type', flat=True)
+    )
+    available_choices = [
+        (value, label) for value, label in SERVICE_TYPE_CHOICES
+        if value not in existing_types
+    ]
+
+    if not available_choices:
+        messages.info(request, 'All available services have already been added to this environment.')
+        return redirect('environments:detail', pk=env_pk)
+
     if request.method == 'POST':
-        form = ServiceEnableForm(request.POST)
+        form = ServiceEnableForm(request.POST, available_choices=available_choices)
         if form.is_valid():
             stype = form.cleaned_data['service_type']
             name = form.cleaned_data.get('name', '').strip()
+            # Double-check in case of race condition
+            if Service.objects.filter(environment=env, service_type=stype).exists():
+                messages.error(request, 'That service type has already been added to this environment.')
+                return redirect('services:enable', env_pk=env_pk)
             service = Service.objects.create(
                 environment=env,
                 service_type=stype,
@@ -100,10 +122,9 @@ def service_enable(request, env_pk):
                 enabled=True,
             )
             messages.success(request, f'Service "{service.display_name}" added. Now connect it below.')
-            # Immediately send to Step 2
             return redirect('services:connect', pk=service.pk)
     else:
-        form = ServiceEnableForm()
+        form = ServiceEnableForm(available_choices=available_choices)
     return render(request, 'services/enable.html', {'form': form, 'environment': env})
 
 
