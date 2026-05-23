@@ -19,11 +19,12 @@ class Environment(models.Model):
     slug = models.SlugField(unique=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     azure_tenant_id = models.CharField(max_length=100, blank=True)
+    sort_order = models.PositiveIntegerField(default=0, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['sort_order', 'name']
 
     def __str__(self):
         return self.name

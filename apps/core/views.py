@@ -13,7 +13,7 @@ def landing(request):
 
 @login_required
 def dashboard(request):
-    environments = Environment.objects.filter(owner=request.user)
+    environments = Environment.objects.filter(owner=request.user).order_by('sort_order', 'name')
     services = Service.objects.filter(environment__owner=request.user, enabled=True)
     recent_invoices = Invoice.objects.filter(user=request.user)[:5]
     active_subscriptions = Subscription.objects.filter(user=request.user, status__in=['active', 'trialing'])

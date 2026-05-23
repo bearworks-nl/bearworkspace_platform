@@ -9,7 +9,7 @@ def sidebar_context(request):
         Environment.objects
         .filter(owner=request.user)
         .prefetch_related('services')
-        .order_by('name')[:10]
+        .order_by('sort_order', 'name')[:10]
     )
 
     active_env_pk = None
