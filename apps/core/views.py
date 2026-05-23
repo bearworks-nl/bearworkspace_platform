@@ -6,8 +6,6 @@ from apps.billing.models import Subscription, Invoice
 
 
 def landing(request):
-    if request.user.is_authenticated:
-        return redirect('core:dashboard')
     return render(request, 'core/landing.html')
 
 

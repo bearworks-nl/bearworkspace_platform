@@ -900,13 +900,16 @@
   <!-- ===== SIDEBAR ===== -->
   <aside id="sidebar">
     <div class="sidebar-logo">
-      {% if site_settings.logo %}
-      <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.logo_text }}"
-        style="height:36px;max-width:170px;object-fit:contain;flex-shrink:0;">
-      {% else %}
-      <div class="logo-mark">W</div>
-      <span class="sidebar-logo-text">{{ site_settings.logo_text }}</span>
-      {% endif %}
+      <a href="{% url 'core:landing' %}"
+        style="display:flex;align-items:center;gap:10px;text-decoration:none;flex:1;min-width:0;">
+        {% if site_settings.logo %}
+        <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.logo_text }}"
+          style="height:36px;max-width:170px;object-fit:contain;flex-shrink:0;">
+        {% else %}
+        <div class="logo-mark">W</div>
+        <span class="sidebar-logo-text">{{ site_settings.logo_text }}</span>
+        {% endif %}
+      </a>
       <button class="sidebar-collapse-btn" onclick="toggleSidebar()" title="Toggle sidebar">
         <svg id="collapse-icon-expand" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"
           stroke-width="2.5">

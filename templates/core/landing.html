@@ -302,16 +302,21 @@
 
   <!-- ===== NAV ===== -->
   <nav>
-    <a href="#" class="nav-logo">
+    <a href="{% url 'core:landing' %}" class="nav-logo">
+      {% if site_settings.logo %}
+      <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.logo_text }}"
+        style="height:36px;max-width:170px;object-fit:contain;flex-shrink:0;">
+      {% else %}
       <div class="logo-mark">W</div>
-      <span class="logo-text">WorkspaceMgr</span>
+      <span class="logo-text">{{ site_settings.logo_text }}</span>
+      {% endif %}
     </a>
-
+  
     <div class="nav-links">
       <a href="#features" class="nav-link">Features</a>
       <a href="#pricing" class="nav-link">Pricing</a>
       <a href="{% url 'accounts:login' %}" class="nav-link">Sign in</a>
-
+  
       <!-- Theme toggle -->
       <div class="theme-dropdown">
         <button class="theme-toggle-btn" onclick="toggleThemeMenu(event)" title="Switch theme" id="theme-toggle-icon">
@@ -319,7 +324,7 @@
         </button>
         <div class="theme-dropdown-menu" id="theme-menu">
           <button class="theme-opt" id="opt-light" onclick="setTheme('light')">☀️ Light</button>
-          <button class="theme-opt" id="opt-dark"  onclick="setTheme('dark')">🌙 Dark</button>
+          <button class="theme-opt" id="opt-dark" onclick="setTheme('dark')">🌙 Dark</button>
           <button class="theme-opt" id="opt-system" onclick="setTheme('system')">💻 System</button>
         </div>
       </div>
