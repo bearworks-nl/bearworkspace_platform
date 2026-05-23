@@ -93,6 +93,10 @@
       display: none !important;
     }
 
+    #sidebar.collapsed .sidebar-logo img {
+      display: none !important;
+    }
+
     #sidebar.collapsed .sidebar-logo {
       justify-content: center;
     }
@@ -830,8 +834,13 @@
   <!-- ===== SIDEBAR ===== -->
   <aside id="sidebar">
     <div class="sidebar-logo">
+      {% if site_settings.logo %}
+      <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.logo_text }}"
+        style="height:32px;max-width:120px;object-fit:contain;flex-shrink:0;">
+      {% else %}
       <div class="logo-mark">W</div>
-      <span class="sidebar-logo-text">WorkspaceMgr</span>
+      {% endif %}
+      <span class="sidebar-logo-text">{{ site_settings.logo_text }}</span>
       <button class="sidebar-collapse-btn" onclick="toggleSidebar()" title="Toggle sidebar">
         <svg id="collapse-icon-expand" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"
           stroke-width="2.5">
