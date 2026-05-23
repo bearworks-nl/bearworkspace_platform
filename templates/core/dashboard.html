@@ -5,7 +5,7 @@
 {% block content %}
 <div class="page-header">
   <div>
-    <div class="page-title">Good to see you, {{ user.display_name }} 👋</div>
+    <div class="page-title">{{ greeting }}, {{ user.display_name }} 👋</div>
     <div class="page-subtitle">Here's what's happening across your environments.</div>
   </div>
   <a href="{% url 'environments:create' %}" class="btn btn-primary">
