@@ -935,6 +935,16 @@
       </div>
       {% endfor %}
 
+            <!-- All Services -->
+      <div class="sidebar-section-label">Services</div>
+      <a href="{% url 'services:list' %}"
+        class="nav-item {% if request.resolver_match.url_name == 'list' and 'services' in request.path %}active{% endif %}">
+        <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="3" width="20" height="14" rx="2"/>
+          <path d="M8 21h8M12 17v4"/>
+        </svg>
+        <span class="sidebar-label">All Services</span>
+      </a>
         <!-- Billing -->
         <div class="sidebar-section-label">Billing</div>
         <a href="{% url 'billing:overview' %}" class="nav-item {% if request.path == '/billing/' %}active{% endif %}">
