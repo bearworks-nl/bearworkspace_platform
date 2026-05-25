@@ -51,6 +51,14 @@
       --info: #2563eb;
     }
 
+    [data-theme="light"] .logo-dark { 
+      display: none !important; 
+    }
+
+    [data-theme="dark"] .logo-light {
+      display: none !important; 
+    }
+
     * {
       box-sizing: border-box;
     }
@@ -903,8 +911,15 @@
       <a href="{% url 'core:landing' %}"
         style="display:flex;align-items:center;gap:10px;text-decoration:none;flex:1;min-width:0;">
         {% if site_settings.logo %}
+        {% if site_settings.logo_dark %}
+        <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.logo_text }}" class="logo-theme logo-light"
+          style="height:36px;max-width:170px;object-fit:contain;flex-shrink:0;">
+        <img src="{{ site_settings.logo_dark.url }}" alt="{{ site_settings.logo_text }}" class="logo-theme logo-dark"
+          style="height:36px;max-width:170px;object-fit:contain;flex-shrink:0;">
+        {% else %}
         <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.logo_text }}"
           style="height:36px;max-width:170px;object-fit:contain;flex-shrink:0;">
+        {% endif %}
         {% else %}
         <div class="logo-mark">W</div>
         <span class="sidebar-logo-text">{{ site_settings.logo_text }}</span>

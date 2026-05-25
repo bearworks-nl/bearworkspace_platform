@@ -5,12 +5,8 @@ from .models import SiteSettings
 
 @admin.register(SiteSettings)
 class SiteSettingsAdmin(admin.ModelAdmin):
-    """
-    Superadmin-only singleton admin for site branding.
-    Hides the "Add" button and always redirects to the single instance.
-    """
-    fields = ('logo', 'logo_preview', 'logo_text', 'favicon')
-    readonly_fields = ('logo_preview',)
+    fields = ('logo', 'logo_preview', 'logo_dark', 'logo_dark_preview', 'logo_text', 'favicon')
+    readonly_fields = ('logo_preview', 'logo_dark_preview')
 
     def logo_preview(self, obj):
         if obj.logo:
@@ -22,6 +18,16 @@ class SiteSettingsAdmin(admin.ModelAdmin):
         return '—'
     logo_preview.short_description = 'Current logo'
 
+    def logo_dark_preview(self, obj):
+        if obj.logo_dark:
+            return format_html(
+                '<img src="{}" style="max-height:64px;max-width:200px;border-radius:6px;'
+                'border:1px solid #444;padding:4px;background:#0d0f14;" />',
+                obj.logo_dark.url
+            )
+        return '—'
+    logo_dark_preview.short_description = 'Current dark logo'
+
     def has_add_permission(self, request):
         return False
 
@@ -29,6 +35,5 @@ class SiteSettingsAdmin(admin.ModelAdmin):
         return False
 
     def changelist_view(self, request, extra_context=None):
-        """Skip the list view and go straight to the single instance."""
         obj = SiteSettings.get()
         return self.change_view(request, str(obj.pk), extra_context=extra_context)

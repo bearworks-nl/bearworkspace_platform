@@ -17,6 +17,12 @@ class SiteSettings(models.Model):
         default='WorkspaceMgr',
         help_text='Text shown next to the logo in the sidebar.',
     )
+    logo_dark = models.ImageField(
+        upload_to='branding/',
+        null=True,
+        blank=True,
+        help_text='Logo for dark theme. If left empty, the default logo is used for both themes.',
+    )
     favicon = models.ImageField(
         upload_to='branding/',
         null=True,
