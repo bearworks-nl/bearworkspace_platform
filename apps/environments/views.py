@@ -6,6 +6,7 @@ from django.http import JsonResponse
 from django.utils.text import slugify
 from django.views.decorators.http import require_POST
 from django import forms
+from apps.accounts.models import User
 from .models import Environment, EnvironmentMembership
 
 
@@ -30,30 +31,19 @@ def environment_list(request):
 @login_required
 @require_POST
 def environment_reorder(request):
-    """
-    Accepts a JSON body: {"order": [3, 1, 5, 2, ...]}
-    (a list of environment PKs in the new desired order).
-    Updates sort_order for each environment owned by this user.
-    """
     try:
         data = json.loads(request.body)
         order = data.get('order', [])
     except (json.JSONDecodeError, AttributeError):
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
-    # Only allow updating environments this user owns
     owned_ids = set(
         Environment.objects.filter(owner=request.user).values_list('pk', flat=True)
     )
-
-    updates = []
     for position, pk in enumerate(order):
         pk = int(pk)
         if pk in owned_ids:
-            updates.append((pk, position))
-
-    for pk, position in updates:
-        Environment.objects.filter(pk=pk, owner=request.user).update(sort_order=position)
+            Environment.objects.filter(pk=pk, owner=request.user).update(sort_order=position)
 
     return JsonResponse({'status': 'ok'})
 
@@ -72,7 +62,6 @@ def environment_create(request):
                 slug = f'{base_slug}-{i}'
                 i += 1
             env.slug = slug
-            # Place new environments at the end
             max_order = Environment.objects.filter(owner=request.user).count()
             env.sort_order = max_order
             env.save()
@@ -87,7 +76,18 @@ def environment_create(request):
 def environment_detail(request, pk):
     env = get_object_or_404(Environment, pk=pk, owner=request.user)
     services = env.services.order_by('sort_order', 'service_type', 'name')
-    return render(request, 'environments/detail.html', {'environment': env, 'services': services})
+    memberships = env.memberships.select_related('user').order_by('role', 'user__first_name')
+
+    # Users that can be added: all users visible to this owner that aren't already members
+    existing_user_ids = memberships.values_list('user_id', flat=True)
+    addable_users = User.objects.exclude(pk__in=existing_user_ids).exclude(pk=request.user.pk).order_by('first_name', 'last_name', 'email')
+
+    return render(request, 'environments/detail.html', {
+        'environment': env,
+        'services': services,
+        'memberships': memberships,
+        'addable_users': addable_users,
+    })
 
 
 @login_required
@@ -112,3 +112,56 @@ def environment_delete(request, pk):
         messages.success(request, 'Environment deleted.')
         return redirect('environments:list')
     return render(request, 'environments/confirm_delete.html', {'environment': env})
+
+
+# ──────────────────────────────────────────────
+# Member management
+# ──────────────────────────────────────────────
+
+@login_required
+@require_POST
+def environment_member_add(request, pk):
+    env = get_object_or_404(Environment, pk=pk, owner=request.user)
+    user_id = request.POST.get('user_id')
+    role = request.POST.get('role', 'env_member')
+    if role not in ('env_admin', 'env_member'):
+        role = 'env_member'
+
+    user = get_object_or_404(User, pk=user_id)
+    membership, created = EnvironmentMembership.objects.get_or_create(
+        environment=env, user=user,
+        defaults={'role': role},
+    )
+    if not created:
+        membership.role = role
+        membership.save()
+        messages.success(request, f'{user.display_name} role updated to {membership.get_role_display()}.')
+    else:
+        messages.success(request, f'{user.display_name} added as {membership.get_role_display()}.')
+
+    return redirect('environments:detail', pk=pk)
+
+
+@login_required
+@require_POST
+def environment_member_remove(request, pk, user_pk):
+    env = get_object_or_404(Environment, pk=pk, owner=request.user)
+    membership = get_object_or_404(EnvironmentMembership, environment=env, user_id=user_pk)
+    name = membership.user.display_name
+    membership.delete()
+    messages.success(request, f'{name} removed from environment.')
+    return redirect('environments:detail', pk=pk)
+
+
+@login_required
+@require_POST
+def environment_member_role(request, pk, user_pk):
+    env = get_object_or_404(Environment, pk=pk, owner=request.user)
+    membership = get_object_or_404(EnvironmentMembership, environment=env, user_id=user_pk)
+    role = request.POST.get('role', 'env_member')
+    if role not in ('env_admin', 'env_member'):
+        role = 'env_member'
+    membership.role = role
+    membership.save()
+    messages.success(request, f'{membership.user.display_name} is now {membership.get_role_display()}.')
+    return redirect('environments:detail', pk=pk)

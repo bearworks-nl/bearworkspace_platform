@@ -10,4 +10,8 @@ urlpatterns = [
     path('<int:pk>/', views.environment_detail, name='detail'),
     path('<int:pk>/edit/', views.environment_edit, name='edit'),
     path('<int:pk>/delete/', views.environment_delete, name='delete'),
+    # Member management
+    path('<int:pk>/members/add/', views.environment_member_add, name='member_add'),
+    path('<int:pk>/members/<int:user_pk>/remove/', views.environment_member_remove, name='member_remove'),
+    path('<int:pk>/members/<int:user_pk>/role/', views.environment_member_role, name='member_role'),
 ]

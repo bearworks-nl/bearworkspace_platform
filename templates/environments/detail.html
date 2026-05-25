@@ -26,12 +26,13 @@
 </div>
 {% endif %}
 
+<!-- ===== SERVICES ===== -->
 <div class="page-title" style="font-size:15px;margin-bottom:14px;">Services</div>
 
 {% if services %}
 <div
   id="svc-grid"
-  style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;"
+  style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:36px;"
 >
   {% for service in services %}
   <div
@@ -78,8 +79,7 @@
       </label>
     </div>
 
-    <!-- Service detail summary -->
-    {% if service.service_type in 'recast_workspace recast_user_license' %}
+    {% if service.service_type == 'recast_workspace' %}
       {% if service.recast_config %}
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
         {{ service.recast_config.api_url|default:"Not configured" }}
@@ -101,13 +101,136 @@
   {% endfor %}
 </div>
 {% else %}
-<div class="card" style="text-align:center;padding:48px;">
+<div class="card" style="text-align:center;padding:48px;margin-bottom:36px;">
   <div style="font-size:48px;margin-bottom:12px;">⚙️</div>
   <div style="font-size:15px;font-weight:600;margin-bottom:8px;">No services yet</div>
   <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">Add a service to this environment to get started.</div>
   <a href="{% url 'services:enable' environment.pk %}" class="btn btn-primary">Add First Service</a>
 </div>
 {% endif %}
+
+<!-- ===== MEMBERS ===== -->
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+  <div class="page-title" style="font-size:15px;margin-bottom:0;">Members</div>
+  <button
+    onclick="document.getElementById('add-member-modal').style.display='flex'"
+    class="btn btn-secondary btn-sm">
+    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    Add Member
+  </button>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden;">
+  {% if memberships %}
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Role</th>
+        <th>Since</th>
+        <th style="text-align:right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in memberships %}
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <img src="{{ m.user.avatar_url }}" alt="{{ m.user.display_name }}"
+              style="width:32px;height:32px;border-radius:50%;background:var(--bg-raised);border:1px solid var(--border);"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div style="display:none;width:32px;height:32px;border-radius:50%;background:var(--accent-dim);border:1px solid var(--border);align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--accent-light);">
+              {{ m.user.display_name|first|upper }}
+            </div>
+            <div>
+              <div style="font-size:13.5px;font-weight:600;color:var(--text-primary);">{{ m.user.display_name }}</div>
+              <div style="font-size:11.5px;color:var(--text-muted);">{{ m.user.email }}</div>
+            </div>
+          </div>
+        </td>
+        <td>
+          <form method="post" action="{% url 'environments:member_role' environment.pk m.user.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <select name="role" onchange="this.form.submit()"
+              style="background:var(--bg-raised);border:1px solid var(--border-strong);border-radius:7px;padding:5px 10px;font-size:12.5px;font-family:inherit;color:var(--text-primary);cursor:pointer;">
+              <option value="env_admin"  {% if m.role == 'env_admin'  %}selected{% endif %}>Environment Admin</option>
+              <option value="env_member" {% if m.role == 'env_member' %}selected{% endif %}>Environment Member</option>
+            </select>
+          </form>
+        </td>
+        <td style="font-size:12.5px;color:var(--text-muted);">{{ m.joined_at|date:"d M Y" }}</td>
+        <td style="text-align:right;">
+          <form method="post" action="{% url 'environments:member_remove' environment.pk m.user.pk %}"
+            onsubmit="return confirm('Remove {{ m.user.display_name }} from this environment?')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-xs">Remove</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="text-align:center;padding:40px;color:var(--text-muted);font-size:13.5px;">
+    No members yet. Add users to give them access to this environment.
+  </div>
+  {% endif %}
+</div>
+
+<!-- ===== ADD MEMBER MODAL ===== -->
+<div id="add-member-modal"
+  style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;"
+  onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:var(--bg-surface);border:1px solid var(--border-strong);border-radius:20px;padding:28px;max-width:440px;width:90%;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div style="font-size:16px;font-weight:700;">Add Member</div>
+      <button onclick="document.getElementById('add-member-modal').style.display='none'"
+        class="icon-btn" style="width:28px;height:28px;">✕</button>
+    </div>
+
+    <form method="post" action="{% url 'environments:member_add' environment.pk %}">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="form-label">User</label>
+        {% if addable_users %}
+        <select name="user_id" class="form-input" required>
+          <option value="" disabled selected>Select a user…</option>
+          {% for u in addable_users %}
+          <option value="{{ u.pk }}">{{ u.display_name }} — {{ u.email }}</option>
+          {% endfor %}
+        </select>
+        {% else %}
+        <div style="padding:12px;border-radius:8px;background:var(--bg-raised);border:1px solid var(--border);font-size:13.5px;color:var(--text-muted);">
+          All users are already members of this environment.
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <select name="role" class="form-input">
+          <option value="env_member">Environment Member</option>
+          <option value="env_admin">Environment Admin</option>
+        </select>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:5px;">
+          Admins can manage services and members. Members have read-only access.
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button type="button"
+          onclick="document.getElementById('add-member-modal').style.display='none'"
+          class="btn btn-secondary" style="flex:1;">Cancel</button>
+        {% if addable_users %}
+        <button type="submit" class="btn btn-primary" style="flex:1;">Add Member</button>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
 
 <script>
 (function () {
@@ -161,10 +284,7 @@
     saveTimer = setTimeout(() => {
       fetch(REORDER_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': CSRF_TOKEN,
-        },
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
         body: JSON.stringify({ order: cardIds() }),
       }).catch(console.error);
     }, 300);
@@ -173,17 +293,14 @@
   grid.addEventListener('dragstart', (e) => {
     const card = e.target.closest('.svc-card');
     if (!card) return;
-
     dragged = card;
     const rect = card.getBoundingClientRect();
     placeholder = createPlaceholder(rect.width, rect.height);
-
     requestAnimationFrame(() => {
       card.style.opacity = '0.4';
       card.style.cursor  = 'grabbing';
       grid.insertBefore(placeholder, card.nextSibling);
     });
-
     e.dataTransfer.effectAllowed = 'move';
   });
 
@@ -196,23 +313,18 @@
 
   grid.addEventListener('dragend', () => {
     if (!dragged) return;
-
     dragged.style.opacity = '';
     dragged.style.cursor  = 'grab';
-
     if (placeholder && placeholder.parentNode) {
       grid.insertBefore(dragged, placeholder);
       placeholder.remove();
     }
-
-    dragged     = null;
+    dragged = null;
     placeholder = null;
     saveOrder();
   });
 
-  grid.querySelectorAll('.svc-card').forEach(card => {
-    card.setAttribute('draggable', 'true');
-  });
+  grid.querySelectorAll('.svc-card').forEach(card => card.setAttribute('draggable', 'true'));
 })();
 </script>
 {% endblock %}
