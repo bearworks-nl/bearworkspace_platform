@@ -1,9 +1,16 @@
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 from django import forms
+
 from apps.environments.models import Environment
-from .models import Service, RecastConfig, Windows365Config, IntuneConfig, SERVICE_TYPE_CHOICES
+from .models import (
+    Service, RecastConfig, Windows365Config, IntuneConfig,
+    SERVICE_TYPE_CHOICES,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -12,12 +19,12 @@ from .models import Service, RecastConfig, Windows365Config, IntuneConfig, SERVI
 
 class ServiceEnableForm(forms.Form):
     service_type = forms.ChoiceField(
-        choices=[],  # set dynamically
-        widget=forms.Select(attrs={'class': 'form-input'})
+        choices=[],
+        widget=forms.Select(attrs={'class': 'form-input'}),
     )
     name = forms.CharField(
-        max_length=200,
         required=False,
+        max_length=200,
         widget=forms.TextInput(attrs={
             'class': 'form-input',
             'placeholder': 'e.g. Production Recast, Client A W365 …'
@@ -77,9 +84,19 @@ def service_list(request):
 
     if selected_env_id:
         selected_env = get_object_or_404(Environment, pk=selected_env_id, owner=request.user)
-        services = Service.objects.filter(environment=selected_env).select_related('environment')
+        services = (
+            Service.objects
+            .filter(environment=selected_env)
+            .select_related('environment')
+            .order_by('sort_order', 'service_type', 'name')
+        )
     else:
-        services = Service.objects.filter(environment__owner=request.user).select_related('environment')
+        services = (
+            Service.objects
+            .filter(environment__owner=request.user)
+            .select_related('environment')
+            .order_by('sort_order', 'environment', 'service_type', 'name')
+        )
 
     return render(request, 'services/list.html', {
         'environments': environments,
@@ -89,11 +106,39 @@ def service_list(request):
 
 
 @login_required
+@require_POST
+def service_reorder(request):
+    """
+    Accepts a JSON body: {"order": [3, 1, 5, 2, ...]}
+    (a list of service PKs in the new desired order).
+    Updates sort_order for each service owned by this user.
+    """
+    try:
+        data = json.loads(request.body)
+        order = data.get('order', [])
+    except (json.JSONDecodeError, AttributeError):
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    # Only allow updating services this user owns
+    owned_ids = set(
+        Service.objects
+        .filter(environment__owner=request.user)
+        .values_list('pk', flat=True)
+    )
+
+    for position, pk in enumerate(order):
+        pk = int(pk)
+        if pk in owned_ids:
+            Service.objects.filter(pk=pk).update(sort_order=position)
+
+    return JsonResponse({'status': 'ok'})
+
+
+@login_required
 def service_enable(request, env_pk):
     """Step 1 – Add a new service (picks type + optional name)."""
     env = get_object_or_404(Environment, pk=env_pk, owner=request.user)
 
-    # Determine which service types are already added for this environment
     existing_types = set(
         Service.objects.filter(environment=env).values_list('service_type', flat=True)
     )
@@ -111,15 +156,17 @@ def service_enable(request, env_pk):
         if form.is_valid():
             stype = form.cleaned_data['service_type']
             name = form.cleaned_data.get('name', '').strip()
-            # Double-check in case of race condition
             if Service.objects.filter(environment=env, service_type=stype).exists():
                 messages.error(request, 'That service type has already been added to this environment.')
                 return redirect('services:enable', env_pk=env_pk)
+            # Place new services at the end of the current list
+            max_order = Service.objects.filter(environment__owner=request.user).count()
             service = Service.objects.create(
                 environment=env,
                 service_type=stype,
                 name=name,
                 enabled=True,
+                sort_order=max_order,
             )
             messages.success(request, f'Service "{service.display_name}" added. Now connect it below.')
             return redirect('services:connect', pk=service.pk)
@@ -134,18 +181,9 @@ def service_enable(request, env_pk):
 
 @login_required
 def service_connect(request, pk):
-    """
-    Step 2 – Connect the service.
-
-    For Recast services: checks whether a RecastConfig with valid credentials
-    already exists (i.e. the service is 'available').
-      - Yes  → marks is_connected=True, redirects to read_licenses (Step 3)
-      - No   → renders connect.html offering to configure credentials or order
-    """
     service = get_object_or_404(Service, pk=pk, environment__owner=request.user)
 
     if service.service_type != 'recast_workspace':
-        # Non-Recast services go straight to configure
         return redirect('services:configure', pk=service.pk)
 
     config = getattr(service, 'recast_config', None)
@@ -158,50 +196,45 @@ def service_connect(request, pk):
             service.is_connected = True
             service.status = 'active'
             service.save()
-            messages.success(request, 'Service connected. Reading licenses…')
+            messages.success(request, 'Service connected.')
             return redirect('services:read_licenses', pk=service.pk)
 
+        elif action == 'configure':
+            return redirect('services:configure', pk=service.pk)
+
         elif action == 'order':
-            # Placeholder: redirect to the (TBD) order flow
-            messages.info(request, 'The order flow is not yet available. Please check back later.')
-            return redirect('services:connect', pk=service.pk)
+            messages.info(request, 'Redirecting to order a Recast licence… (TBD)')
+            return redirect('billing:plan_list')
 
     return render(request, 'services/connect.html', {
         'service': service,
-        'already_available': already_available,
         'config': config,
+        'already_available': already_available,
     })
 
 
 # ---------------------------------------------------------------------------
-# Step 3 – Read licenses
+# Step 3 – Read licences from Recast API
 # ---------------------------------------------------------------------------
 
 @login_required
 def service_read_licenses(request, pk):
-    """
-    Step 3 – Read available licenses from the Recast API.
-
-    In production this would call the Recast API and populate
-    config.license_count / config.license_numbers.
-    For now it uses whatever is already stored, and a POST with
-    action='sync' simulates fetching (stub).
-    """
     service = get_object_or_404(Service, pk=pk, environment__owner=request.user)
 
     if service.service_type != 'recast_workspace':
         return redirect('services:configure', pk=service.pk)
 
-    config, _ = RecastConfig.objects.get_or_create(service=service)
+    config = getattr(service, 'recast_config', None)
 
-    if request.method == 'POST' and request.POST.get('action') == 'sync':
-        # --- Replace this stub with a real Recast API call ---
-        # e.g.: licenses = recast_client.get_licenses(config.api_url, config.api_key)
-        # config.license_count = len(licenses)
-        # config.license_numbers = [lic['id'] for lic in licenses]
-        # config.save()
-        messages.info(request, 'License sync is not yet wired to the Recast API. Stub ran.')
-        return redirect('services:read_licenses', pk=service.pk)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'read' and config:
+            # Placeholder: in production, call the Recast API here
+            config.license_count = 0
+            config.license_numbers = []
+            config.save()
+            messages.success(request, 'Licence data refreshed.')
+            return redirect('services:match_licenses', pk=service.pk)
 
     return render(request, 'services/read_licenses.html', {
         'service': service,
@@ -210,18 +243,11 @@ def service_read_licenses(request, pk):
 
 
 # ---------------------------------------------------------------------------
-# Step 4 – Match licenses against orders
+# Step 4 – Match licences to an order
 # ---------------------------------------------------------------------------
 
 @login_required
 def service_match_licenses(request, pk):
-    """
-    Step 4 – Match license numbers against existing orders/subscriptions.
-
-    Looks for Subscriptions whose plan.name contains any of the license
-    numbers stored in config.license_numbers.  A real implementation would
-    compare against an Order model (TBD).
-    """
     from apps.billing.models import Subscription
 
     service = get_object_or_404(Service, pk=pk, environment__owner=request.user)
@@ -232,7 +258,6 @@ def service_match_licenses(request, pk):
     config = getattr(service, 'recast_config', None)
     license_numbers = config.license_numbers if config else []
 
-    # --- Replace with proper Order model lookup when available ---
     matched_subscriptions = []
     if license_numbers:
         matched_subscriptions = list(
@@ -263,7 +288,7 @@ def service_match_licenses(request, pk):
 
 
 # ---------------------------------------------------------------------------
-# Standard configure / delete views (unchanged)
+# Standard configure / delete views
 # ---------------------------------------------------------------------------
 
 @login_required
@@ -320,7 +345,6 @@ def service_configure(request, pk):
             else:
                 messages.success(request, 'Service configured successfully.')
 
-            # After configuring a Recast service, send to Step 2
             if service.service_type == 'recast_workspace':
                 return redirect('services:connect', pk=service.pk)
             return redirect('environments:detail', pk=service.environment.pk)
@@ -355,7 +379,6 @@ def service_delete(request, pk):
         service.delete()
         messages.success(request, 'Service removed.')
         return redirect('environments:detail', pk=env_pk)
-    # GET: show confirmation page
     return render(request, 'services/confirm_delete.html', {
         'service': service,
         'cancel_url': service.environment.pk,

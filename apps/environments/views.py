@@ -86,7 +86,7 @@ def environment_create(request):
 @login_required
 def environment_detail(request, pk):
     env = get_object_or_404(Environment, pk=pk, owner=request.user)
-    services = env.services.all()
+    services = env.services.order_by('sort_order', 'service_type', 'name')
     return render(request, 'environments/detail.html', {'environment': env, 'services': services})
 
 

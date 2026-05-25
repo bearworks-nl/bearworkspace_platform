@@ -5,6 +5,7 @@ app_name = 'services'
 
 urlpatterns = [
     path('', views.service_list, name='list'),
+    path('reorder/', views.service_reorder, name='reorder'),
     path('enable/<int:env_pk>/', views.service_enable, name='enable'),       # Step 1
     path('<int:pk>/connect/', views.service_connect, name='connect'),         # Step 2
     path('<int:pk>/licenses/', views.service_read_licenses, name='read_licenses'),   # Step 3

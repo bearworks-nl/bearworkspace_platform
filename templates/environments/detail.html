@@ -29,9 +29,33 @@
 <div class="page-title" style="font-size:15px;margin-bottom:14px;">Services</div>
 
 {% if services %}
-<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
+<div
+  id="svc-grid"
+  style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;"
+>
   {% for service in services %}
-  <div class="card">
+  <div
+    class="card svc-card"
+    data-id="{{ service.pk }}"
+    style="transition:all 0.2s;cursor:grab;position:relative;"
+    onmouseover="this.style.borderColor='rgba(99,102,241,0.3)'"
+    onmouseout="this.style.borderColor='var(--border)'"
+  >
+    <!-- Drag handle -->
+    <div
+      class="drag-handle"
+      title="Drag to reorder"
+      style="position:absolute;top:10px;right:10px;opacity:0.35;cursor:grab;line-height:1;padding:2px 4px;border-radius:4px;transition:opacity 0.15s;"
+      onmouseover="this.style.opacity='0.75'"
+      onmouseout="this.style.opacity='0.35'"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <circle cx="9"  cy="5"  r="1.5"/><circle cx="15" cy="5"  r="1.5"/>
+        <circle cx="9"  cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
+        <circle cx="9"  cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/>
+      </svg>
+    </div>
+
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
       <div style="display:flex;align-items:center;gap:10px;">
         <div style="font-size:28px;">{{ service.icon }}</div>
@@ -84,4 +108,111 @@
   <a href="{% url 'services:enable' environment.pk %}" class="btn btn-primary">Add First Service</a>
 </div>
 {% endif %}
+
+<script>
+(function () {
+  const REORDER_URL = "{% url 'services:reorder' %}";
+  const CSRF_TOKEN  = "{{ csrf_token }}";
+
+  const grid = document.getElementById('svc-grid');
+  if (!grid) return;
+
+  let dragged     = null;
+  let placeholder = null;
+  let saveTimer   = null;
+
+  function cardIds() {
+    return [...grid.querySelectorAll('.svc-card')].map(c => c.dataset.id);
+  }
+
+  function createPlaceholder(width, height) {
+    const el = document.createElement('div');
+    el.style.cssText = `
+      width:${width}px;height:${height}px;
+      border:2px dashed rgba(99,102,241,0.4);
+      border-radius:14px;background:rgba(99,102,241,0.04);
+      pointer-events:none;transition:none;
+    `;
+    return el;
+  }
+
+  function cardFromPoint(x, y) {
+    const els = document.elementsFromPoint(x, y);
+    for (const el of els) {
+      const card = el.closest('.svc-card');
+      if (card && card !== dragged) return card;
+    }
+    return null;
+  }
+
+  function insertPlaceholderNear(target, x) {
+    if (!target) return;
+    const rect  = target.getBoundingClientRect();
+    const after = x > rect.left + rect.width / 2;
+    if (after) {
+      grid.insertBefore(placeholder, target.nextSibling);
+    } else {
+      grid.insertBefore(placeholder, target);
+    }
+  }
+
+  function saveOrder() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      fetch(REORDER_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': CSRF_TOKEN,
+        },
+        body: JSON.stringify({ order: cardIds() }),
+      }).catch(console.error);
+    }, 300);
+  }
+
+  grid.addEventListener('dragstart', (e) => {
+    const card = e.target.closest('.svc-card');
+    if (!card) return;
+
+    dragged = card;
+    const rect = card.getBoundingClientRect();
+    placeholder = createPlaceholder(rect.width, rect.height);
+
+    requestAnimationFrame(() => {
+      card.style.opacity = '0.4';
+      card.style.cursor  = 'grabbing';
+      grid.insertBefore(placeholder, card.nextSibling);
+    });
+
+    e.dataTransfer.effectAllowed = 'move';
+  });
+
+  grid.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const target = cardFromPoint(e.clientX, e.clientY);
+    if (target) insertPlaceholderNear(target, e.clientX);
+  });
+
+  grid.addEventListener('dragend', () => {
+    if (!dragged) return;
+
+    dragged.style.opacity = '';
+    dragged.style.cursor  = 'grab';
+
+    if (placeholder && placeholder.parentNode) {
+      grid.insertBefore(dragged, placeholder);
+      placeholder.remove();
+    }
+
+    dragged     = null;
+    placeholder = null;
+    saveOrder();
+  });
+
+  grid.querySelectorAll('.svc-card').forEach(card => {
+    card.setAttribute('draggable', 'true');
+  });
+})();
+</script>
 {% endblock %}
